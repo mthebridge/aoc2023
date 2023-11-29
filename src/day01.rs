@@ -45,7 +45,7 @@ pub fn get_calibration_part2(line: &str) -> u64 {
                 if substr.starts_with(name) {
                     // A match - add to list.  No need to check any more names.
                     digits.push(val);
-                    break
+                    break;
                 }
             }
         }
@@ -54,9 +54,7 @@ pub fn get_calibration_part2(line: &str) -> u64 {
 }
 
 pub fn run() {
-    let input_path = std::env::args()
-    .nth(2)
-    .expect("No argument provided");
+    let input_path = std::env::args().nth(2).expect("No argument provided");
     let input = std::fs::read_to_string(input_path).unwrap();
 
     let part1 = input.lines().map(get_calibration_part1).sum::<u64>();
