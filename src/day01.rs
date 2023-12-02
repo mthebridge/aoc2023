@@ -39,7 +39,7 @@ const DIGIT_NAMES: [(&str, u32); 9] = [
     ("nine", 9),
 ];
 
-// Get the calibration value, looking for nemric and English-word digits.
+// Get the calibration value, looking for numeric and English-word digits.
 fn get_calibration_part2(line: &str) -> u32 {
     let mut digits = vec![];
     for (idx, c) in line.char_indices() {
@@ -51,7 +51,7 @@ fn get_calibration_part2(line: &str) -> u32 {
             // But that's wrong, as I found when reading the subreddit - there's a trap that completely
             // passed me by because of my basic implementation. Digit names can overlap,
             // as in "fiveight".  So we do need to check all characters.
-            // There is an optimziation in that we don't need to find every digit - we could just search
+            // There is an optimization in that we don't need to find every digit - we could just search
             // for the first match from each end, or only store 2 and overwrite the second each time we
             // get a subsequent match.  But getting the full set is fast enough.
             let substr = line.get(idx..).unwrap();
