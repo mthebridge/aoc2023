@@ -1,7 +1,7 @@
 // Arguably easier than yesterday - only issues were not reading the question!
 // Parsing is the only fiddly bit - I almost reached for regex, but the need for nesting across
 // the various draws for each game felt fiddly, and I quite like the string-split-and-iterator
-// approach when you now the input is well-formed and can just unwrap eveyrwhere.
+// approach when you know the input is well-formed and can just unwrap eveyrwhere.
 
 // A set of numbers read from the bag.
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
