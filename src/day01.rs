@@ -2,7 +2,7 @@
 //  - Don't need to collect the digits into vectors. Could do a
 //  single pass over each line and only  keep first/last at the cost of some more code.
 // - There's defintiely optimization in the string matching/searching!
-pub fn get_calibration_part1(line: &str) -> u64 {
+fn get_calibration_part1(line: &str) -> u64 {
     let digits = line
         .chars()
         .filter(|&c| c.is_ascii_digit())
@@ -31,7 +31,7 @@ const DIGIT_NAMES: [(&str, u64); 9] = [
     ("nine", 9),
 ];
 
-pub fn get_calibration_part2(line: &str) -> u64 {
+fn get_calibration_part2(line: &str) -> u64 {
     let mut digits = vec![];
     for (idx, c) in line.char_indices() {
         if c.is_ascii_digit() {
@@ -53,8 +53,7 @@ pub fn get_calibration_part2(line: &str) -> u64 {
     calculate_calibration(&digits)
 }
 
-pub fn run() {
-    let input_path = std::env::args().nth(2).expect("No argument provided");
+pub fn run(input_path: String) {
     let input = std::fs::read_to_string(input_path).unwrap();
 
     let part1 = input.lines().map(get_calibration_part1).sum::<u64>();
