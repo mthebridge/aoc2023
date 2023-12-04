@@ -1,11 +1,13 @@
-// Template.
-// Copy to daynum.rs, and uncomment relevant lins in main to add
+// Part 2 took me longer than it should have done - mainly because I kept trying to
+// work out how to mutate the list of Cards as I iterated to update the copy count within them,
+// and fighting the borrow checker.
+// In the end, switching to tracking copies separately solved that.
+// Otherwise, not a lot of interest - a relatively straightforward day I think.
 
 use std::collections::HashSet;
 
-type NumberSet = HashSet<u8>;
-
-fn parse_set(line: &str) -> NumberSet {
+// Parse the whitespace-separated set of numbers.
+fn parse_set(line: &str) -> HashSet<u8> {
     line.trim()
         .split_whitespace()
         .map(|s| s.parse().unwrap())
@@ -19,8 +21,9 @@ struct Card {
 }
 
 impl Card {
+    // Calculate the score, which is 0 for no matches, 2^(n-1) for 1 or more.
+    // (Don't think there's a single mathematical function to get that...)
     fn part1_score(&self) -> u32 {
-        // score is 0 for no matches, 2^(n-1) for 1 or more.
         if self.matches == 0 {
             0
         } else {
@@ -34,31 +37,35 @@ pub fn run(input_path: String) {
     let num_games = input.lines().count();
 
     let cards = input.lines().enumerate().map(|(idx, line)| {
+        // Parsing.
         let (_, numbers) = line.split_once(": ").unwrap();
         let mut numbersets = numbers.split(" | ");
         let winners = parse_set(numbersets.next().unwrap());
         let this_card = parse_set(numbersets.next().unwrap());
         let match_count = winners.intersection(&this_card).count() as u8;
         Card {
+            // As in other days, rely on the Card number being line number + 1.
             id: idx as u8 + 1,
             matches: match_count,
         }
     });
+
+    // Part1 - just sum the scores of each card.
     println!(
         "Part 1: {}",
         cards.clone().map(|card| card.part1_score()).sum::<u32>()
     );
 
-    let mut card_list: Vec<Card> = cards.collect();
-    card_list.sort_by_key(|c| c.id);
+    // For part 2, keep a count of copies of each card.
+    // Cards are 1-indexed and this list is 0-indexed!
+    // We start with 1 copy of each card.
     let mut card_copies = vec![1; num_games];
-
-    for card in &card_list {
+    for card in cards {
         let this_copies = card_copies[card.id as usize - 1];
-        for i in 0..card.matches {
-            // Add a copy of the next card up.
+        for i in 1..=card.matches {
+            // For each copy of *this* card, add a copy to the next card up.
             let next_id = (i + card.id) as usize;
-            card_copies[next_id] += this_copies;
+            card_copies[next_id - 1] += this_copies;
         }
     }
 
