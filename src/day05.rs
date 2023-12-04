@@ -1,8 +1,7 @@
 // Ooof.
 // The classic nice easy part1, and then a part2 that needs optimization.
-// It runs in about 3 minutes, and I didn;t have the time to think up something cleverer.
-// Flamegraph shows most of the time is in comparisons in `apply_mapping` - so we might be able to
-// do something there to speed it up enough.
+// Part 2 ran in about 3 minutes - until I flamegrapehd it and spotted I needed
+// to sort the buckets, then it dropped to 15s.
 
 #[derive(Debug, Clone)]
 struct MapBucket {
@@ -30,9 +29,16 @@ impl MapBucket {
 fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
     mapping
         .iter()
-        // Get the correct bucket.  Will only be one.
-        .find(|bucket| input >= bucket.src_start && input < (bucket.src_start + bucket.size))
-        .map_or(input, |bucket| input - bucket.src_start + bucket.dest_start)
+        // Get the correct bucket.
+        .take_while(|bucket| input < bucket.src_start)
+        .last()
+        .map_or(input, |bucket| {
+            if input < bucket.src_start + bucket.size {
+                input - bucket.src_start + bucket.dest_start
+            } else {
+                input
+            }
+        })
 }
 
 const DOUBLE_BLANK_LINE: &str = "\n\n";
@@ -66,13 +72,15 @@ pub fn run(input_path: String) {
         .split(DOUBLE_BLANK_LINE)
         .map(|section| {
             // Map each mapping table
-            section
+            let mut table = section
                 .lines()
                 // Skip the header, it doesn't contain anything interesting.
                 .skip(1)
                 // Each line is a single mapping rule.
                 .map(MapBucket::from_str)
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>();
+            table.sort_by_key(|map| map.src_start);
+            table
         })
         .collect::<Vec<_>>();
 
