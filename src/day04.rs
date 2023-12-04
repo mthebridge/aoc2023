@@ -8,8 +8,7 @@ use std::collections::HashSet;
 
 // Parse the whitespace-separated set of numbers.
 fn parse_set(line: &str) -> HashSet<u8> {
-    line.trim()
-        .split_whitespace()
+    line.split_whitespace()
         .map(|s| s.parse().unwrap())
         .collect()
 }

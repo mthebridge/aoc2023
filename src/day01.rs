@@ -44,7 +44,7 @@ fn get_calibration_part2(line: &str) -> u32 {
     let mut digits = vec![];
     for (idx, c) in line.char_indices() {
         if c.is_ascii_digit() {
-            digits.push(c.to_digit(10).unwrap() as u32)
+            digits.push(c.to_digit(10).unwrap())
         } else {
             // I first thought there was inefficiency here - when we hit the match we could skip
             // over the next name.len() entries in the loop, and couldn't be bothered to enhance.

@@ -1,7 +1,7 @@
 // Template.
 // Copy to daynum.rs, and uncomment relevant lins in main to add
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 struct MapBucket {
@@ -28,14 +28,13 @@ fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
     mapping
         .iter()
         // Get the correct bucket.  Will only be one.
-        .filter(|bucket| input >= bucket.src_start && input < (bucket.src_start + bucket.size))
-        .next()
+        .find(|bucket| input >= bucket.src_start && input < (bucket.src_start + bucket.size))
         .map_or(input, |bucket| input - bucket.src_start + bucket.dest_start)
 }
 
 const DOUBLE_BLANK_LINE: &str = "\n\n";
 
-fn find_answer(seeds: impl Iterator<Item = u64>, mappings: &Vec<Vec<MapBucket>>) -> u64 {
+fn find_answer(seeds: impl Iterator<Item = u64>, mappings: &[Vec<MapBucket>]) -> u64 {
     let mut cache = HashMap::new();
     seeds
         .map(|seed| match cache.get(&seed) {
@@ -80,8 +79,7 @@ pub fn run(input_path: String) {
 
     let new_seeds = seeds
         .chunks(2)
-        .map(|chunk| chunk[0]..chunk[0] + chunk[1])
-        .flatten();
+        .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1]);
     let part2 = find_answer(new_seeds, &mappings);
     println!("Part 2: {}", part2);
 }
