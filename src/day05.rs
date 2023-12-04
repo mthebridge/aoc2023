@@ -1,7 +1,8 @@
-// Template.
-// Copy to daynum.rs, and uncomment relevant lins in main to add
-
-use std::collections::HashMap;
+// Ooof.
+// The classic nice easy part1, and then a part2 that needs optimization.
+// It runs in about 3 minutes, and I didn;t have the time to think up something cleverer.
+// Flamegraph shows most of the time is in comparisons in `apply_mapping` - so we might be able to
+// do something there to speed it up enough.
 
 #[derive(Debug, Clone)]
 struct MapBucket {
@@ -24,6 +25,8 @@ impl MapBucket {
     }
 }
 
+// Apply the mapping.  If the input is within src..src+size, adjust by (dst_start - src_start).
+// Otherwise return the input.
 fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
     mapping
         .iter()
@@ -34,18 +37,14 @@ fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
 
 const DOUBLE_BLANK_LINE: &str = "\n\n";
 
-fn find_answer(seeds: impl Iterator<Item = u64>, mappings: &[Vec<MapBucket>]) -> u64 {
-    let mut cache = HashMap::new();
+// For each seed, work out its final location, and then get the minimum of those.
+fn solve(seeds: impl Iterator<Item = u64>, mappings: &[Vec<MapBucket>]) -> u64 {
     seeds
-        .map(|seed| match cache.get(&seed) {
-            Some(x) => *x,
-            None => {
-                let result = mappings.iter().fold(seed, |input, mapping| {
-                    apply_mapping(input, mapping.as_slice())
-                });
-                cache.insert(seed, result);
-                result
-            }
+        .map(|seed| {
+            // Run the mappings in order.
+            mappings.iter().fold(seed, |input, mapping| {
+                apply_mapping(input, mapping.as_slice())
+            })
         })
         .min()
         .unwrap()
@@ -56,6 +55,7 @@ pub fn run(input_path: String) {
 
     let (seed_str, map_str) = input.split_once(DOUBLE_BLANK_LINE).unwrap();
     let (_, seed_part) = seed_str.split_once(": ").unwrap();
+    // Parse the initial seed numbers.
     let seeds = seed_part
         .trim()
         .split(' ')
@@ -65,21 +65,24 @@ pub fn run(input_path: String) {
     let mappings = map_str
         .split(DOUBLE_BLANK_LINE)
         .map(|section| {
+            // Map each mapping table
             section
                 .lines()
-                // Skip the header
+                // Skip the header, it doesn't contain anything interesting.
                 .skip(1)
+                // Each line is a single mapping rule.
                 .map(MapBucket::from_str)
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
-    let part1 = find_answer(seeds.clone().into_iter(), &mappings);
+    let part1 = solve(seeds.clone().into_iter(), &mappings);
     println!("Part 1: {}", part1);
 
     let new_seeds = seeds
         .chunks(2)
         .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1]);
-    let part2 = find_answer(new_seeds, &mappings);
+    // This is slow, but it finishes in a few minutes...
+    let part2 = solve(new_seeds, &mappings);
     println!("Part 2: {}", part2);
 }
