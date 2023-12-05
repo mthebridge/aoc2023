@@ -1,7 +1,7 @@
 // Well that was easier!
 // A bit of quick maths to spot that you're basically solving for:
-// "find 0 < i < N in such that i * (N -a) is greater than some target"
-// This is symnmetric, so you only need to find the first value.
+// "find 0 < i < N such that i*(N-i) is greater than some target"
+// This is symmetric, so you only need to find the first value.
 // I wondered as I did part 1 if we might need to switch to binary search for
 // part 2, but linear search is perfectly fast enough.
 // My only slowdown was an off by one in my inequality, and then forgetting to use u64s and
