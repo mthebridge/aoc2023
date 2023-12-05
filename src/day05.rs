@@ -90,7 +90,7 @@ pub fn run(input_path: String) {
     let new_seeds = seeds
         .chunks(2)
         .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1]);
-    // This is slow, but it finishes in a few minutes...
+    // This is slow, but it finishes in about 15s...
     let part2 = solve(new_seeds, &mappings);
     println!("Part 2: {}", part2);
 }
