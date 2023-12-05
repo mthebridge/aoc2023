@@ -87,7 +87,7 @@ fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -
                 apply_mapping_range(input, &mapping)
             })
         })
-        .map(|(a, b)| { println!("Range: {a}-{b}"); a})
+        .map(|(a, b)| {println!("{a}-{b}"); a })
         .min()
         .unwrap()
 }
@@ -126,6 +126,6 @@ pub fn run(input_path: String) {
 
     let mut seed_ranges = seeds.chunks(2).map(|chunk| (chunk[0], chunk[0] + chunk[1])).collect::<Vec<_>>();
     seed_ranges.sort_by_key(|range| range.0);
-    let part2 = solve(seed_ranges.into_iter(), &mappings);
+    let part2 = solve(seed_ranges, &mappings);
     println!("Part 2: {}", part2);
 }
