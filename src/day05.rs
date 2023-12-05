@@ -38,67 +38,36 @@ fn apply_mapping_range(
 ) -> Vec<(u64, u64)> {
     input_ranges.into_iter().flat_map(|(start, end)| {
         assert!(start <= end);
-        let start_bucket = mapping
-        .iter()
-            // Get the correct buckets.
-            .find(|bucket| is_in_range(start, bucket.src_range));
-
-        let end_bucket = mapping
+        let overlap_buckets = mapping
             .iter()
             // Get the correct buckets.
-            .find(|bucket| is_in_range(end, bucket.src_range));
+            .filter(|bucket| start >= bucket.src_range.0 && end < bucket.src_range.1);
+        let mut ranges = vec![];
 
-        // Now work out the ranges.
-        if start == 8140058  {
-            println!("!!! BAD ENTRY");
-            dbg!(start, end);
-        }
-        match (start_bucket, end_bucket) {
-            // No buckets match, so just return the input range.
-            (None, None) => vec![(start, end)],
-            // No bucket for A, bucket for B.
-            // Return the overlap with the b range and the source up to the b range start.
-            (None, Some(b)) => {
-                let second_range = (b.dest_range.0, b.apply(end));
-                let first_range = (start, b.src_range.0);
-                if first_range.0 == 8140058 || second_range.0 == 8140058 {
-                    println!("!!! BAD ENTRY");
-                    dbg!(start, end, b);
-                }
-                vec![first_range, second_range]
-            },
-            // Bucket for A, no bucket for B.
-            // Return the overlap with the A range and the source from the A range end.
-            (Some(a), None) => {
-                let first_range = (a.apply(start), a.dest_range.1);
-                let second_range = (a.src_range.1, end);
-                if first_range.0 == 8140058 || second_range.0 == 8140058 {
-                    println!("!!! BAD ENTRY");
-                    dbg!(start, end, a);
-                }
-                vec![first_range, second_range]
-            }
-            // Two buckets.
-            (Some(a), Some(b))  => {
-                if a == b {vec![(a.apply(start), b.apply(end))] }
-                else {
-                    let first_range = (a.apply(start), a.dest_range.1);
-                    let third_range = (b.dest_range.0, b.apply(end));
-                    if a.src_range.1 < b.src_range.0 {
-                        // Maths says we should include these too!
-                        // But somehow, this doesn't work??
-                        // println!("Maybe missing {} - {}?", a.src_range.1, b.src_range.0);
-                        if first_range.0 == 8140058 || a.src_range.1 == 8140058 || third_range.0 == 8140058 {
-                            println!("!!! BAD ENTRY");
-                            dbg!(start, end, a, b);
-                        }
-                        vec![first_range, (a.src_range.1, b.src_range.0), third_range]
-                    } else {
-                        vec![first_range,  third_range]
+        let mut prev_bucket: Option<&MapBucket> = None;
+
+        for bucket in overlap_buckets {
+                match (is_in_range(start, bucket.src_range), is_in_range(end, bucket.src_range)) {
+                    // One bucket.
+                    (true, true) => ranges.push((bucket.apply(start), bucket.apply(end))),
+                    (true, false) => {
+                        ranges.push((bucket.apply(start), bucket.dest_range.1))
                     }
+                    (false, true) => {
+                        ranges.push((bucket.dest_range.1, bucket.apply(end)))
+                    }
+                    (false, false) => ranges.push(bucket.src_range)
+                };
+                if let Some(prev) = prev_bucket.take() {
+                    ranges.push((prev.src_range.1, bucket.src_range.0))
                 }
-            },
+                prev_bucket = Some(&bucket)
         }
+
+        if ranges.is_empty() {
+            ranges.push((start, end));
+        }
+        ranges
     }).collect()
 }
 
@@ -111,7 +80,7 @@ fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -
             // Run the mappings in order.
             mappings.iter().fold(vec![seed_range], |input, mapping| {
                 let res = apply_mapping_range(input, &mapping);
-                println!("After mapping, ranges are: {:?}", res);
+                // println!("After mapping, ranges are: {:?}", res);
                 res
             })
         }).collect::<Vec<_>>();
