@@ -1,6 +1,7 @@
 // Ooof.
 // The classic nice easy part 1, and then a part 2 that needs optimization.
-// Part 2 runs in about 3 minutes which is really too slow.
+// Originally solved with brute-force ((see commit history) - runs in about 3 minutes which is really too slow.
+// Moving to just calcualting ranges all the way down seems to work but hitting some edge cases...
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct MapBucket {
@@ -30,8 +31,6 @@ fn is_in_range(n: u64, range: (u64, u64)) -> bool {
 }
 
 // Apply the mapping, to get all the ranges that this range maps to in the destination.
-// If the input is within src..src+size, adjust by (dst_start - src_start).
-// Otherwise return the input.
 fn apply_mapping_range(
     input_ranges: impl IntoIterator<Item = (u64, u64)>,
     mapping: &[MapBucket],
@@ -72,9 +71,8 @@ fn apply_mapping_range(
                 else {
                     let first_range = (a.apply(start), a.dest_range.1);
                     let third_range = (b.dest_range.0, b.apply(end));
-                    // Cover the overlaps in each bucket, and the gap in between in
-                    // the source range.
-                    vec![first_range, (a.src_range.1, b.src_range.0), third_range]
+                    vec![first_range,  third_range]
+
                 }
             },
         }
@@ -89,10 +87,10 @@ fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -
         .flat_map(|seed_range| {
             // Run the mappings in order.
             mappings.iter().fold(vec![seed_range], |input, mapping| {
-                println!("Before mapping, ranges are: {:?}", input);
+                // println!("Before mapping, ranges are: {:?}", input);
                 apply_mapping_range(input, &mapping)
             })
-        }).map(|(a, b)| {println!("  ({a}, {b})");  a })
+        }).map(|(a, _)|  a )
         .min()
         .unwrap()
 }
