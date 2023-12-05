@@ -28,7 +28,6 @@ fn parse_line_pt2<'a>(line: &'a str) -> u64 {
         .chars()
         .filter(|c| c.is_ascii_digit())
         .collect::<String>();
-    dbg!(&value);
     value.parse::<u64>().unwrap()
 }
 
