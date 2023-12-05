@@ -1,13 +1,11 @@
 // Ooof.
-// The classic nice easy part1, and then a part2 that needs optimization.
-// Part 2 ran in about 3 minutes - until I flamegrapehd it and spotted I needed
-// to sort the buckets, then it dropped to 15s.
+// The classic nice easy part 1, and then a part 2 that needs optimization.
+// Part 2 runs in about 3 minutes which is really too slow.
 
 #[derive(Debug, Clone)]
 struct MapBucket {
-    src_start: u64,
-    dest_start: u64,
-    size: u64,
+    src_range: (u64, u64),
+    dest_range: (u64, u64),
 }
 
 impl MapBucket {
@@ -15,11 +13,10 @@ impl MapBucket {
         let mut words = input.split(' ');
         let dest_start = words.next().unwrap().parse().unwrap();
         let src_start = words.next().unwrap().parse().unwrap();
-        let size = words.next().unwrap().parse().unwrap();
+        let size: u64 = words.next().unwrap().parse().unwrap();
         MapBucket {
-            src_start,
-            dest_start,
-            size,
+            src_range: (src_start, src_start + size),
+            dest_range: (dest_start, dest_start + size)
         }
     }
 }
@@ -30,15 +27,8 @@ fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
     mapping
         .iter()
         // Get the correct bucket.
-        .take_while(|bucket| input < bucket.src_start)
-        .last()
-        .map_or(input, |bucket| {
-            if input < bucket.src_start + bucket.size {
-                input - bucket.src_start + bucket.dest_start
-            } else {
-                input
-            }
-        })
+        .find(|bucket| input >= bucket.src_range.0 && input < bucket.src_range.1)
+        .map_or(input, |bucket| input - bucket.src_range.0 + bucket.dest_range.0)
 }
 
 const DOUBLE_BLANK_LINE: &str = "\n\n";
@@ -79,7 +69,7 @@ pub fn run(input_path: String) {
                 // Each line is a single mapping rule.
                 .map(MapBucket::from_str)
                 .collect::<Vec<_>>();
-            table.sort_by_key(|map| map.src_start);
+            table.sort_by_key(|map| map.src_range.0);
             table
         })
         .collect::<Vec<_>>();
@@ -90,7 +80,7 @@ pub fn run(input_path: String) {
     let new_seeds = seeds
         .chunks(2)
         .flat_map(|chunk| chunk[0]..chunk[0] + chunk[1]);
-    // This is slow, but it finishes in about 15s...
+    // This is slow...
     let part2 = solve(new_seeds, &mappings);
     println!("Part 2: {}", part2);
 }
