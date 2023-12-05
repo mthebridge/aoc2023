@@ -38,9 +38,11 @@ fn apply_mapping_range(
 ) -> Vec<(u64, u64)> {
     input_ranges.into_iter().flat_map(|(start, end)| {
         assert!(start <= end);
+        // Find all the mappings that overlap this range.
         let overlap_buckets = mapping
             .iter()
-            // Get the correct buckets.
+            // Any overlap if the end is after the mapping start and the start before the mapping end.
+            // Had to draw this out to convince myself!
             .filter(|bucket| end >= bucket.src_range.0 && start < bucket.src_range.1)
             .collect::<Vec<_>>();
 
@@ -70,7 +72,7 @@ fn apply_mapping_range(
                     // Must be last bucket.  Just push the end half of the mapping.
                     ranges.push((bucket.dest_range.0, bucket.apply(end)))
                 }
-                // Neither the start not the end are in this bucket but it fully overlaps.
+                // Neither the start nor the end are in this bucket but it fully overlaps.
                 // Push the whole destination range
                 (false, false) => ranges.push(bucket.dest_range)
             };
