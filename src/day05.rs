@@ -31,6 +31,7 @@ fn is_in_range(n: u64, range: (u64, u64)) -> bool {
 }
 
 // Apply the mapping, to get all the ranges that this range maps to in the destination.
+// BUG: not covering other buckets that fall *between* the ranges properly!
 fn apply_mapping_range(
     input_ranges: impl IntoIterator<Item = (u64, u64)>,
     mapping: &[MapBucket],
@@ -38,7 +39,7 @@ fn apply_mapping_range(
     input_ranges.into_iter().flat_map(|(start, end)| {
         assert!(start <= end);
         let start_bucket = mapping
-            .iter()
+        .iter()
             // Get the correct buckets.
             .find(|bucket| is_in_range(start, bucket.src_range));
 
@@ -48,6 +49,10 @@ fn apply_mapping_range(
             .find(|bucket| is_in_range(end, bucket.src_range));
 
         // Now work out the ranges.
+        if start == 8140058  {
+            println!("!!! BAD ENTRY");
+            dbg!(start, end);
+        }
         match (start_bucket, end_bucket) {
             // No buckets match, so just return the input range.
             (None, None) => vec![(start, end)],
@@ -56,6 +61,10 @@ fn apply_mapping_range(
             (None, Some(b)) => {
                 let second_range = (b.dest_range.0, b.apply(end));
                 let first_range = (start, b.src_range.0);
+                if first_range.0 == 8140058 || second_range.0 == 8140058 {
+                    println!("!!! BAD ENTRY");
+                    dbg!(start, end, b);
+                }
                 vec![first_range, second_range]
             },
             // Bucket for A, no bucket for B.
@@ -63,6 +72,10 @@ fn apply_mapping_range(
             (Some(a), None) => {
                 let first_range = (a.apply(start), a.dest_range.1);
                 let second_range = (a.src_range.1, end);
+                if first_range.0 == 8140058 || second_range.0 == 8140058 {
+                    println!("!!! BAD ENTRY");
+                    dbg!(start, end, a);
+                }
                 vec![first_range, second_range]
             }
             // Two buckets.
@@ -74,7 +87,11 @@ fn apply_mapping_range(
                     if a.src_range.1 < b.src_range.0 {
                         // Maths says we should include these too!
                         // But somehow, this doesn't work??
-                        println!("Maybe missing {} - {}?", a.src_range.1, b.src_range.0);
+                        // println!("Maybe missing {} - {}?", a.src_range.1, b.src_range.0);
+                        if first_range.0 == 8140058 || a.src_range.1 == 8140058 || third_range.0 == 8140058 {
+                            println!("!!! BAD ENTRY");
+                            dbg!(start, end, a, b);
+                        }
                         vec![first_range, (a.src_range.1, b.src_range.0), third_range]
                     } else {
                         vec![first_range,  third_range]
@@ -89,15 +106,16 @@ const DOUBLE_BLANK_LINE: &str = "\n\n";
 
 // For each seed, work out its final location, and then get the minimum of those.
 fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -> u64 {
-    seeds
+    let final_ranges = seeds
         .flat_map(|seed_range| {
             // Run the mappings in order.
             mappings.iter().fold(vec![seed_range], |input, mapping| {
-                // println!("Before mapping, ranges are: {:?}", input);
-                apply_mapping_range(input, &mapping)
+                let res = apply_mapping_range(input, &mapping);
+                println!("After mapping, ranges are: {:?}", res);
+                res
             })
-        }).map(|(a, _)|  a )
-        .min()
+        }).collect::<Vec<_>>();
+    final_ranges.into_iter().map(|(a, _)|  a ).min()
         .unwrap()
 }
 
