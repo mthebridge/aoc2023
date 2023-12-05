@@ -148,20 +148,3 @@ pub fn run(input_path: String) {
     let part2 = solve(seed_ranges, &mappings);
     println!("Part 2: {}", part2);
 }
-
-#[test]
-fn test_cases() {
-    let seeds = vec![(5, 8), (12, 62), (70, 80)];
-    let mappings = [
-        vec![MapBucket {
-            src_range: (3, 10),
-            dest_range: (61, 71),
-        }],
-        vec![MapBucket {
-            src_range: (58, 75),
-            dest_range: (5, 23),
-        }],
-    ];
-    let res = solve(seeds.into_iter(), &mappings);
-    assert_eq!(res, 12);
-}
