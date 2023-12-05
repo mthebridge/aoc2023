@@ -16,7 +16,7 @@ impl MapBucket {
         let size: u64 = words.next().unwrap().parse().unwrap();
         MapBucket {
             src_range: (src_start, src_start + size),
-            dest_range: (dest_start, dest_start + size)
+            dest_range: (dest_start, dest_start + size),
         }
     }
 }
@@ -28,7 +28,9 @@ fn apply_mapping(input: u64, mapping: &[MapBucket]) -> u64 {
         .iter()
         // Get the correct bucket.
         .find(|bucket| input >= bucket.src_range.0 && input < bucket.src_range.1)
-        .map_or(input, |bucket| input - bucket.src_range.0 + bucket.dest_range.0)
+        .map_or(input, |bucket| {
+            input - bucket.src_range.0 + bucket.dest_range.0
+        })
 }
 
 const DOUBLE_BLANK_LINE: &str = "\n\n";
