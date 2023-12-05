@@ -41,32 +41,46 @@ fn apply_mapping_range(
         let overlap_buckets = mapping
             .iter()
             // Get the correct buckets.
-            .filter(|bucket| start >= bucket.src_range.0 && end < bucket.src_range.1);
-        let mut ranges = vec![];
+            .filter(|bucket| end >= bucket.src_range.0 && start < bucket.src_range.1)
+            .collect::<Vec<_>>();
 
+        if overlap_buckets.is_empty() {
+            return vec![(start, end)]
+        }
+
+        let mut ranges = vec![];
         let mut prev_bucket: Option<&MapBucket> = None;
 
-        for bucket in overlap_buckets {
-                match (is_in_range(start, bucket.src_range), is_in_range(end, bucket.src_range)) {
-                    // One bucket.
-                    (true, true) => ranges.push((bucket.apply(start), bucket.apply(end))),
-                    (true, false) => {
-                        ranges.push((bucket.apply(start), bucket.dest_range.1))
-                    }
-                    (false, true) => {
-                        ranges.push((bucket.dest_range.1, bucket.apply(end)))
-                    }
-                    (false, false) => ranges.push(bucket.src_range)
-                };
-                if let Some(prev) = prev_bucket.take() {
-                    ranges.push((prev.src_range.1, bucket.src_range.0))
+        // Add any part of the range before and after the overlapping buckets.
+        if let Some(b) = overlap_buckets.first() {
+            if start < b.src_range.0 { ranges.push((start, b.src_range.0))}
+        }
+        if let Some(b) = overlap_buckets.last() {
+            if end > b.src_range.1 { ranges.push((b.src_range.1, end))}
+        }
+        for bucket in &overlap_buckets {
+            match (is_in_range(start, bucket.src_range), is_in_range(end, bucket.src_range)) {
+                // All in bucket.  only include the minimal range.
+                (true, true) => ranges.push((bucket.apply(start), bucket.apply(end))),
+                // Must be first bucket.  Just push the start half of the mapping.
+                (true, false) => {
+                    ranges.push((bucket.apply(start), bucket.dest_range.1))
                 }
-                prev_bucket = Some(&bucket)
+                (false, true) => {
+                    // Must be last bucket.  Just push the end half of the mapping.
+                    ranges.push((bucket.dest_range.0, bucket.apply(end)))
+                }
+                // Neither the start not the end are in this bucket but it fully overlaps.
+                // Push the whole destination range
+                (false, false) => ranges.push(bucket.dest_range)
+            };
+            if let Some(prev) = prev_bucket.take() {
+                // Push the source gap between buckets
+                ranges.push((prev.src_range.1, bucket.src_range.0))
+            }
+            prev_bucket = Some(&bucket)
         }
 
-        if ranges.is_empty() {
-            ranges.push((start, end));
-        }
         ranges
     }).collect()
 }
@@ -80,7 +94,6 @@ fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -
             // Run the mappings in order.
             mappings.iter().fold(vec![seed_range], |input, mapping| {
                 let res = apply_mapping_range(input, &mapping);
-                // println!("After mapping, ranges are: {:?}", res);
                 res
             })
         }).collect::<Vec<_>>();
