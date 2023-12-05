@@ -71,8 +71,14 @@ fn apply_mapping_range(
                 else {
                     let first_range = (a.apply(start), a.dest_range.1);
                     let third_range = (b.dest_range.0, b.apply(end));
-                    vec![first_range,  third_range]
-
+                    if a.src_range.1 < b.src_range.0 {
+                        // Maths says we should include these too!
+                        // But somehow, this doesn't work??
+                        println!("Maybe missing {} - {}?", a.src_range.1, b.src_range.0);
+                        vec![first_range, (a.src_range.1, b.src_range.0), third_range]
+                    } else {
+                        vec![first_range,  third_range]
+                    }
                 }
             },
         }
