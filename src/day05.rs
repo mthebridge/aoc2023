@@ -77,7 +77,7 @@ fn apply_mapping_range(
                         ranges.push((prev.src_range.1, bucket.src_range.0))
                     }
                 }
-                prev_bucket = Some(&bucket);
+                prev_bucket = Some(bucket);
                 match (
                     is_in_range(start, bucket.src_range),
                     is_in_range(end, bucket.src_range),
@@ -104,8 +104,7 @@ fn solve(seeds: impl Iterator<Item = (u64, u64)>, mappings: &[Vec<MapBucket>]) -
         .flat_map(|seed_range| {
             // Run the mappings in order.
             mappings.iter().fold(vec![seed_range], |input, mapping| {
-                let res = apply_mapping_range(input, &mapping);
-                res
+                apply_mapping_range(input, mapping)
             })
         })
         .collect::<Vec<_>>();

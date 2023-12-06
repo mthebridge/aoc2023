@@ -1,8 +1,13 @@
 // Day 7.
-// Remember to read the question!
+// For part1 I got blocked for ages because I assumed regular poker rules.
+// Part 2 is  a bit ugly.  I don't like the duplication of the hands, but
+// it's readable enough IMO and does mean we only need one pass through the
+// data.
+//
+// Was a bit annoying to have to separately handle the edge case of JJJJJ in the input!
+use std::cmp::Ordering;
 
-use std::cmp::{Ord, Ordering, PartialOrd};
-
+// Card values, in rank order.
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 enum Card {
     Joker,
@@ -54,6 +59,7 @@ struct Hand {
     bid: usize,
 }
 
+// Hand types, in rank order.
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 enum HandType {
     HighCard,
@@ -68,12 +74,11 @@ enum HandType {
 // Get a list of (card type, count) for a hand.
 fn get_card_counts(cards: &[Card]) -> Vec<(Card, u8)> {
     cards.iter().fold(vec![], |mut set, this| {
-        let cur_count = match set.iter().find(|(c, _)| c == this) {
-            Some((_, count)) => count + 1,
-            None => 1u8,
+        if let Some((_, ref mut count)) = set.iter_mut().find(|(c, _)| c == this) {
+            *count += 1;
+        } else {
+            set.push((*this, 1))
         };
-        set.retain(|x| x.0 != *this);
-        set.push((*this, cur_count));
         set
     })
 }
@@ -151,31 +156,31 @@ fn get_hand_type(card_counts: &[(Card, u8)], top_card_count: u8) -> HandType {
 
 impl Hand {
     fn sort(&self, other: &Hand, part2: bool) -> Ordering {
-        let (self_type, other_type) = if part2 {
-            (self.hand_type_pt2, other.hand_type_pt2)
+        let rank_ordering = if part2 {
+            self.hand_type_pt2.cmp(&other.hand_type_pt2)
         } else {
-            (self.hand_type_pt1, other.hand_type_pt1)
+            self.hand_type_pt1.cmp(&other.hand_type_pt1)
         };
-        if self_type < other_type {
-            Ordering::Less
-        } else if self_type > other_type {
-            Ordering::Greater
-        } else {
-            // Same rank.  Compare card values
-            let (self_cards, other_cards) = if part2 {
-                (&self.cards_pt2, &other.cards_pt2)
-            } else {
-                (&self.cards_pt1, &other.cards_pt1)
-            };
-            for (a, b) in self_cards.iter().zip(other_cards) {
-                if a < b {
-                    return Ordering::Less;
-                } else if a > b {
-                    return Ordering::Greater;
-                } else { // Try next card }
+        match rank_ordering {
+            Ordering::Less => Ordering::Less,
+            Ordering::Greater => Ordering::Greater,
+            Ordering::Equal => {
+                // Same rank.  Compare card values
+                let cards = if part2 {
+                    self.cards_pt2.iter().zip(&other.cards_pt2)
+                } else {
+                    self.cards_pt1.iter().zip(&other.cards_pt1)
+                };
+                for (a, b) in cards {
+                    match a.cmp(b) {
+                        Ordering::Less => return Ordering::Less,
+                        Ordering::Greater => return Ordering::Greater,
+                        // Match - move to next card
+                        Ordering::Equal => (),
+                    }
                 }
+                Ordering::Equal
             }
-            Ordering::Equal
         }
     }
 }

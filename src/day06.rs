@@ -16,7 +16,7 @@ fn calculate_distance(total_time: u64, charge_time: u64) -> u64 {
 }
 
 // Parse out the numbers
-fn parse_line_part1<'a>(line: &'a str) -> impl Iterator<Item = u64> + 'a {
+fn parse_line_part1(line: &str) -> impl Iterator<Item = u64> + '_ {
     let (_, numbers) = line.split_once(':').unwrap();
     numbers
         .split_whitespace()
@@ -24,7 +24,7 @@ fn parse_line_part1<'a>(line: &'a str) -> impl Iterator<Item = u64> + 'a {
 }
 
 // Parse out all the numbers into a single number.
-fn parse_line_pt2<'a>(line: &'a str) -> u64 {
+fn parse_line_pt2(line: &str) -> u64 {
     let (_, numbers) = line.split_once(':').unwrap();
     let value = numbers
         .chars()
