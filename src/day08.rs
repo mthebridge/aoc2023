@@ -19,7 +19,7 @@ impl Dir {
     }
 }
 
-fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (String, String)>, part2: bool) -> u32
+fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (String, String)>, part2: bool) -> u64
     where <I as IntoIterator>::IntoIter: Clone {
     let mut steps = 0;
     let mut current_nodes = if part2 {
@@ -32,20 +32,23 @@ fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (
     } else {
         vec!["ZZZ"]
     };
+
     for dir in dirs.into_iter().cycle() {
         steps += 1;
-        let mut nexts  = current_nodes.into_iter().map(|current| {
+        let nexts  = current_nodes.iter().map(move |&current| {
             let entry = nodes.get(current).unwrap();
             match dir {
                 Dir::Left => entry.0.as_str(),
                 Dir::Right => entry.1.as_str(),
             }
-        });
-        if nexts.all(|next| targets.iter().find(|&&target| target == next).is_some()) {
-            break;
-        } else {
-            current_nodes = nexts.collect()
+        }).collect::<Vec<_>>();
+        if steps % 10_000_000 == 0 {
+            println!("Iteration {steps}");
         }
+        if nexts.iter().all(|next| targets.iter().find(|&target| target == next).is_some()) {
+            break;
+        }
+        current_nodes = nexts;
     }
 
     steps
@@ -56,7 +59,7 @@ pub fn run(input_path: String) {
     let (dir_input, map_input) = input.split_once("\n\n").unwrap();
     let dirs = dir_input.chars().map(Dir::from_char);
 
-    let map_pattern = regex::Regex::new(r#"([A-Z]+) = \(([A-Z]+), ([A-Z]+)\)"#).unwrap();
+    let map_pattern = regex::Regex::new(r#"([A-Z1-9]+) = \(([A-Z1-9]+), ([A-Z1-9]+)\)"#).unwrap();
     let nodes = map_input
         .lines()
         .map(|l| {
@@ -71,8 +74,8 @@ pub fn run(input_path: String) {
 
     // dbg!(&nodes);
     let part1 = solve(dirs.clone(), &nodes, false);
-    let part2 = solve(dirs, &nodes, true);
-
     println!("Part 1: {}", part1);
+
+    let part2 = solve(dirs, &nodes, true);
     println!("Part 2: {}", part2);
 }
