@@ -55,29 +55,26 @@ where
     };
 
     // For each source, count the steps to reach a target.
-    let steps = start_nodes
-        .iter()
-        .map(|&start| {
-            let mut steps = 0u64;
-            let mut current = start;
-            for dir in dirs.clone().into_iter().cycle() {
-                steps += 1;
+    let steps = start_nodes.iter().map(|&start| {
+        let mut steps = 0u64;
+        let mut current = start;
+        for dir in dirs.clone().into_iter().cycle() {
+            steps += 1;
 
-                let entry = nodes.get(current).unwrap();
-                let next = match dir {
-                    Dir::Left => entry.0.as_str(),
-                    Dir::Right => entry.1.as_str(),
-                };
+            let entry = nodes.get(current).unwrap();
+            let next = match dir {
+                Dir::Left => entry.0.as_str(),
+                Dir::Right => entry.1.as_str(),
+            };
 
-                if targets.iter().find(|&&target| target == next).is_some() {
-                    break;
-                }
-
-                current = next;
+            if targets.iter().find(|&&target| target == next).is_some() {
+                break;
             }
-            steps
-        })
-        .collect::<Vec<_>>();
+
+            current = next;
+        }
+        steps
+    });
 
     // We want the minimum steps for all the targets to be reached at once.
     // It turns out with our inputs this is the lowest common multiple of
@@ -90,9 +87,7 @@ where
     // to another target, and the position modulo length of direction lists, and do some
     // modular arithmetic fun...
     // Using the `num` crate as I can't be bothered to implement Euclid's algorithm myself.
-    steps
-        .into_iter()
-        .fold(dir_count, |total, next| num::integer::lcm(total, next))
+    steps.fold(dir_count, |total, next| num::integer::lcm(total, next))
 }
 
 pub fn run(input_path: String) {
