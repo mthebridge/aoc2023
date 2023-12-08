@@ -21,8 +21,7 @@ impl Dir {
 
 fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (String, String)>, part2: bool) -> u64
     where <I as IntoIterator>::IntoIter: Clone {
-    let mut steps = 0;
-    let mut current_nodes = if part2 {
+    let start_nodes = if part2 {
         nodes.keys().filter(|k| k.ends_with('A')).map(|k| k.as_str()).collect::<Vec<_>>()
     } else {
         vec!["AAA"]
@@ -32,26 +31,36 @@ fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (
     } else {
         vec!["ZZZ"]
     };
+    // let dir_count = dirs.clone().into_iter().count() as u64;
 
-    for dir in dirs.into_iter().cycle() {
-        steps += 1;
-        let nexts  = current_nodes.iter().map(move |&current| {
+    // For each source, get the time to reach a target.
+    let steps = start_nodes.iter().map(|&start| {
+        let mut steps = 0u64;
+        let mut current = start;
+        for dir in dirs.clone().into_iter().cycle() {
+            steps += 1;
+
             let entry = nodes.get(current).unwrap();
-            match dir {
-                Dir::Left => entry.0.as_str(),
-                Dir::Right => entry.1.as_str(),
-            }
-        }).collect::<Vec<_>>();
-        if steps % 10_000_000 == 0 {
-            println!("Iteration {steps}");
-        }
-        if nexts.iter().all(|next| targets.iter().find(|&target| target == next).is_some()) {
-            break;
-        }
-        current_nodes = nexts;
-    }
+            let next = match dir {
+                    Dir::Left => entry.0.as_str(),
+                    Dir::Right => entry.1.as_str(),
+            };
 
-    steps
+            if targets.iter().find(|&&target| target == next).is_some() {
+                break;
+            }
+
+            current = next;
+        }
+        steps
+    }).collect::<Vec<_>>();
+
+    dbg!(&steps);
+    // For
+    steps.into_iter().fold(1, |total, next| {
+        num::integer::lcm(total, next)
+    })
+
 }
 
 pub fn run(input_path: String) {
