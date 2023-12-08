@@ -19,6 +19,38 @@ impl Dir {
     }
 }
 
+fn solve<I: IntoIterator<Item = Dir> + Clone>(dirs: I, nodes: &HashMap<String, (String, String)>, part2: bool) -> u32
+    where <I as IntoIterator>::IntoIter: Clone {
+    let mut steps = 0;
+    let mut current_nodes = if part2 {
+        nodes.keys().filter(|k| k.ends_with('A')).map(|k| k.as_str()).collect::<Vec<_>>()
+    } else {
+        vec!["AAA"]
+    };
+    let targets = if part2 {
+        nodes.keys().filter(|k| k.ends_with('Z')).map(|k| k.as_str()).collect::<Vec<_>>()
+    } else {
+        vec!["ZZZ"]
+    };
+    for dir in dirs.into_iter().cycle() {
+        steps += 1;
+        let mut nexts  = current_nodes.into_iter().map(|current| {
+            let entry = nodes.get(current).unwrap();
+            match dir {
+                Dir::Left => entry.0.as_str(),
+                Dir::Right => entry.1.as_str(),
+            }
+        });
+        if nexts.all(|next| targets.iter().find(|&&target| target == next).is_some()) {
+            break;
+        } else {
+            current_nodes = nexts.collect()
+        }
+    }
+
+    steps
+}
+
 pub fn run(input_path: String) {
     let input = std::fs::read_to_string(input_path).unwrap();
     let (dir_input, map_input) = input.split_once("\n\n").unwrap();
@@ -38,24 +70,9 @@ pub fn run(input_path: String) {
         .collect::<HashMap<_, _>>();
 
     // dbg!(&nodes);
-    let mut start = "AAA";
-    let mut part1_steps = 0;
-    for dir in dirs.cycle() {
-        part1_steps += 1;
-        let entry = nodes.get(start).unwrap();
-        let next = match dir {
-            Dir::Left => &entry.0,
-            Dir::Right => &entry.1,
-        };
-        if next == "ZZZ" {
-            break;
-        } else {
-            start = next
-        }
-    }
+    let part1 = solve(dirs.clone(), &nodes, false);
+    let part2 = solve(dirs, &nodes, true);
 
-    let part2 = 0;
-
-    println!("Part 1: {}", part1_steps);
+    println!("Part 1: {}", part1);
     println!("Part 2: {}", part2);
 }
