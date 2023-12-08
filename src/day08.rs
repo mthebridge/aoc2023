@@ -1,9 +1,10 @@
 // Another "optimize perf for part 2".  Part 1 took me 10 minutes; part 2
 // over an hour...
 // There's a lot of assumptions here, namely that the answer is
-// a multiple of the number of steps needed to reach a target for each gjost, and that
-// they all cycle nicely in sync with the directions, neither of which I proved here.
-// Thanks to my colleagues who sahred that insight and helped me find this solution and get
+// a multiple of the number of steps needed to reach a target for each ghost, and that
+// they all cycle nicely, which I only proved to myself after the fact -
+// more details in the inline comments.
+// Thanks to my colleagues who shared insights that helped me find this solution and get
 // over the line!
 
 use std::collections::HashMap;
@@ -32,6 +33,8 @@ fn solve<I: IntoIterator<Item = Dir> + Clone>(
 where
     <I as IntoIterator>::IntoIter: Clone,
 {
+    // Note down the length of the direction cycle.
+    let dir_count = dirs.clone().into_iter().count() as u64;
     // Part 1 wants route from AAA -> ZZZ
     // Part 2 wants routes from all ??A to any ??Z
     let (start_nodes, targets) = if part2 {
@@ -78,13 +81,18 @@ where
 
     // We want the minimum steps for all the targets to be reached at once.
     // It turns out with our inputs this is the lowest common multiple of
-    // the individual scores, implying that they all form cycles in phase with
-    // the direction list...
-    // if we were doing this properly we'd need to keep track of the postion modulo
-    // length of direction lists, and do some modular arithmetic fun.
+    // the individual scores, and the input direction cycle length.
+    // This only works as (by inspection of the input file), the next step after each
+    // target matches the step from the source.
+    // [We could check this programatically here, but it's easily done by grepping the input].
+    //
+    // If this weren't true, we'd need to keep track of how long it takes to get back
+    // to another target, and the position modulo length of direction lists, and do some
+    // modular arithmetic fun...
+    // Using the `num` crate as I can't be bothered to implement Euclid's algorithm myself.
     steps
         .into_iter()
-        .fold(1, |total, next| num::integer::lcm(total, next))
+        .fold(dir_count, |total, next| num::integer::lcm(total, next))
 }
 
 pub fn run(input_path: String) {
