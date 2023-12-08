@@ -2,7 +2,7 @@
 // over an hour...
 // There's a lot of assumptions here, namely that the answer is
 // a multiple of the number of steps needed to reach a target for each ghost, and that
-// they all cycle nicely, which I only proved to myself after the fact -
+// they all cycle nicely, which I only added proof for after the fact -
 // more details in the inline comments.
 // Thanks to my colleagues who shared insights that helped me find this solution and get
 // over the line!
@@ -55,8 +55,18 @@ where
     };
 
     // For each source, count the steps to reach a target.
+    // We want the minimum steps for all the targets to be reached at once.
+    // It turns out with our inputs this is the lowest common multiple of
+    // the individual steps, and the input direction cycle length.
+    // This only works as the next step after each target matches the step from the source.
+    // The code asserts this is the case by looping through again to reach the next target.
+    //
+    // If this weren't true, we'd need to keep track of how long it takes to get back
+    // to another target, and the position modulo length of direction lists, and do some
+    // modular arithmetic fun...
     let steps = start_nodes.iter().map(|&start| {
         let mut steps = 0u64;
+        let mut first_target = None;
         let mut current = start;
         for dir in dirs.clone().into_iter().cycle() {
             steps += 1;
@@ -67,8 +77,18 @@ where
                 Dir::Right => entry.1.as_str(),
             };
 
-            if targets.iter().find(|&&target| target == next).is_some() {
-                break;
+            if let Some(t) = targets.iter().find(|&&target| target == next) {
+                if let Some((loc, count)) = first_target {
+                    // Reached a target again - check it's the same one so the cycle
+                    // assumptions hold.
+                    assert_eq!(loc, t);
+                    assert_eq!(steps, count);
+                    break;
+                } else {
+                    // Reached the target.  Save off the name and count, and keep going.
+                    first_target = Some((t, steps));
+                    steps = 0;
+                }
             }
 
             current = next;
@@ -76,18 +96,10 @@ where
         steps
     });
 
-    // We want the minimum steps for all the targets to be reached at once.
-    // It turns out with our inputs this is the lowest common multiple of
-    // the individual scores, and the input direction cycle length.
-    // This only works as (by inspection of the input file), the next step after each
-    // target matches the step from the source.
-    // [We could check this programatically here, but it's easily done by grepping the input].
-    //
-    // If this weren't true, we'd need to keep track of how long it takes to get back
-    // to another target, and the position modulo length of direction lists, and do some
-    // modular arithmetic fun...
     // Using the `num` crate as I can't be bothered to implement Euclid's algorithm myself.
-    steps.fold(dir_count, |total, next| num::integer::lcm(total, next))
+    steps.fold(dir_count, |total, to_target| {
+        num::integer::lcm(total, to_target)
+    })
 }
 
 pub fn run(input_path: String) {
