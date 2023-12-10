@@ -1,3 +1,17 @@
+// That was fun.  A nice puzzle, and several ways to go at it.
+//
+// The good - I decided to go for the iterate-over-the-grid for the second part: and work out for each cell
+// Whether it was inside or outside the loop by tracking how many times we'd crossed the path on that row.
+// Release build runs in 50ms so happy on that front.
+//
+// On the other hand several hours wasted diue to errors...
+// - Forgetting to handle the dangling section case at the end of a row (easily fixed).
+// - Not proeprly thinking through my algorithm.
+// - I forgot to handle the start cell at all at first. Then when I fixed that, I got it *wrong* - but only if the S was
+// on the right edge of a horizontal segment, which none of the test examples are.
+// In the end the liberal assertions saved me, so lesson is to put those in sooner than later!
+
+// Simple wrapper around the grid, holding the start cell separately.
 struct Grid {
     grid: Vec<Vec<char>>,
     start: (usize, usize),
@@ -31,20 +45,13 @@ impl Grid {
         }
     }
 
-    // Check that a potential area is inside the grid.
-    fn check_bounds(&self, x: usize, y: usize) -> bool {
-        let max_y = self.grid.len();
-        let max_x = self.grid[0].len();
-        x < max_x && y < max_y
-    }
-
     // Calculate the connected positions to this element.
-    // These are the two adjacent elemtns absed on the pipe shape.
+    // These are the two adjacent elements absed on the pipe shape.
     fn pipe_neighbours(&self, pos: (usize, usize)) -> impl Iterator<Item = (usize, usize)> + '_ {
         let (x, y) = pos;
 
-        // Use of saturating substraction saves wrapping errors.
-        // If the grid is well formed this is fine.
+        // Use of saturating substraction avoids wrapping errors (although means we have to filter out
+        // pos again later).
         let candidates = match self.get((x, y)) {
             '|' => vec![(x, y.saturating_sub(1)), (x, y + 1)],
             '-' => vec![(x.saturating_sub(1), y), (x + 1, y)],
@@ -55,7 +62,7 @@ impl Grid {
             '.' => vec![],
             'S' => {
                 // We don't know the shape.  Find the neighbours by checking all 4 orthogonal
-                // neithbours and seeing if *this* is a neighbour of the candidate.
+                // neighbours and seeing if *this* is a neighbour of the candidate.
                 [
                     (x.saturating_sub(1), y),
                     (x + 1, y),
@@ -72,8 +79,9 @@ impl Grid {
         };
         candidates
             .into_iter()
-            // Check bounds - don't return anything off the grid, and crucially, if the saturating substraction returned ourselves, dont return that.
-            .filter(move |(nx, ny)| (*nx, *ny) != (x, y) && self.check_bounds(*nx, *ny))
+            // If the saturating substraction returned ourselves, don't return that
+            // or we'll recurse forever (not that I made that mistake, cough cough...)
+            .filter(move |(nx, ny)| (*nx, *ny) != (x, y))
     }
 
     // Check if two positions are directly connected neighbours.
@@ -82,10 +90,12 @@ impl Grid {
     }
 
     // Does the given horizontal section of pipe cross the outside/inside boundary?
+    // Assumes caller has already checked that the provided section is a continuous
+    // section of the path.
     fn is_crossing_boundary(&self, y: usize, start_x: usize, end_x: usize) -> bool {
         let (start_val, end_val) = (self.get((start_x, y)), self.get((end_x, y)));
         // This section is a crossing if the start and end have different vertical connections
-        // This is fiddly in the case of the S.
+        // This is a bit more tedious in the case of the S.
         let real_start = if start_val == 'S' {
             if self.is_pipe_neighbour((start_x, y), (start_x, y + 1)) {
                 'F'
@@ -199,7 +209,7 @@ impl PipeRow {
     }
 }
 
-// Work out how many poitns are inside the loop for a single row.
+// Work out how many points are inside the loop for a single row.
 fn get_inside_point_count<'a>(
     grid: &'a Grid,
     y: usize,
