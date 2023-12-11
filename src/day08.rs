@@ -108,7 +108,7 @@ pub fn run(input_path: String) {
     let dirs = dir_input.chars().map(Dir::from_char);
 
     // Regex cos life's too short.
-    let map_pattern = regex::Regex::new(r#"([A-Z1-9]+) = \(([A-Z1-9]+), ([A-Z1-9]+)\)"#).unwrap();
+    let map_pattern = regex::Regex::new(r"([A-Z1-9]+) = \(([A-Z1-9]+), ([A-Z1-9]+)\)").unwrap();
     let nodes = map_input
         .lines()
         .map(|l| {
