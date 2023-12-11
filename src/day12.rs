@@ -10,7 +10,6 @@ fn calculate_possibles(row: &[char], lengths: &[u8]) -> usize {
     let mut possibles = 0;
     let this_run_len = lengths[0] as usize;
 
-    // dbg!(row, lengths, runs_after_this, space_needed);
     // We can potentially start a run from anywhere here on as long as we have enough space.
     for this_run_start in 0..=row.len() - space_needed {
         // If the previous character was a fixed #, we can't start here (or anywhere after this!)
@@ -28,8 +27,7 @@ fn calculate_possibles(row: &[char], lengths: &[u8]) -> usize {
                 || row[this_run_start + this_run_len] != '#')
         {
             if lengths.len() == 1 {
-                // This is the final run, so a valid option - if there are not more `']`
-                // println!("Valid final run at {this_run_start}");
+                // This is the final run, so a valid option - if there are not more `#`
                 if row[this_run_start + this_run_len..]
                     .iter()
                     .all(|&r| r != '#')
@@ -40,12 +38,10 @@ fn calculate_possibles(row: &[char], lengths: &[u8]) -> usize {
                 // This could be a valid option.  Check positions for the remaining runs.
                 // Skip 1 further off the end to account for the space.
                 let new_run_start = this_run_start + this_run_len + 1;
-                // println!("Consider next run starting at {new_run_start}");
                 possibles += calculate_possibles(&row[new_run_start..], &lengths[1..])
             }
         }
     }
-    // dbg!(row.len(), possibles);
     possibles
 }
 
@@ -62,7 +58,7 @@ pub fn run(input_path: String) {
         )
     });
 
-    let part1 = records
+    let part1 = records.clone()
         .map(|(row, lengths)| {
             let res = calculate_possibles(&row, &lengths);
             // println!("{} {:?}: {}", row.iter().collect::<String>(), &lengths, res);
@@ -70,8 +66,24 @@ pub fn run(input_path: String) {
         })
         .sum::<usize>();
 
-    let part2 = 0;
 
     println!("Part 1: {}", part1);
+
+    let part2 = records
+    .enumerate()
+    .map(|(i, (row, lengths))| {
+        let mut full_row = row.clone();
+        let mut full_lengths = lengths.clone();
+        // Add 4 copies.
+        for _ in 0..4 {
+            full_row.push('?');
+            full_row.append(&mut row.clone());
+            full_lengths.append(&mut lengths.clone());
+        }
+        let res = calculate_possibles(&full_row, &full_lengths);
+        println!("Entry {i} has {res} options");
+        res
+    })
+    .sum::<usize>();
     println!("Part 2: {}", part2);
 }
