@@ -9,7 +9,7 @@ mod day08;
 mod day09;
 mod day10;
 mod day11;
-// mod day12;
+mod day12;
 // mod day13;
 // mod day14;
 // mod day15
@@ -45,7 +45,7 @@ fn main() -> Result<(), String> {
         9 => day09::run(input_path),
         10 => day10::run(input_path),
         11 => day11::run(input_path),
-        // 12 => day12::run(input_path),
+        12 => day12::run(input_path),
         // 13 => day13::run(input_path),
         // 14 => day14::run(input_path),
         // 15 => day15::run(input_path),
