@@ -1,8 +1,16 @@
 // Template.
 // Copy to daynum.rs, and uncomment relevant lines in main to add
 
+use std::collections::HashMap;
+
+type Cache<'a> = HashMap<(&'a [char], &'a [u8]), usize>;
+
 // Work out how many possible runs we could have givemn this input.
-fn calculate_possibles(row: &[char], lengths: &[u8]) -> usize {
+fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize {
+
+    if let Some(res) = cache.get(&(row, lengths)) {
+        return *res
+    }
     // Check we have space for all the remaining runs.  Need all their sizes,
     // + 1 for each run after this.
     let space_needed = lengths.iter().sum::<u8>() as usize + lengths.len() - 1;
@@ -38,10 +46,11 @@ fn calculate_possibles(row: &[char], lengths: &[u8]) -> usize {
                 // This could be a valid option.  Check positions for the remaining runs.
                 // Skip 1 further off the end to account for the space.
                 let new_run_start = this_run_start + this_run_len + 1;
-                possibles += calculate_possibles(&row[new_run_start..], &lengths[1..])
+                possibles += calculate_possibles(&row[new_run_start..], &lengths[1..], cache)
             }
         }
     }
+    cache.insert((row, lengths), possibles);
     possibles
 }
 
@@ -57,6 +66,8 @@ pub fn run(input_path: String) {
                 .collect::<Vec<_>>(),
         )
     });
+
+    let mut cache: Cache = HashMap::new();
 
     let part1 = records.clone()
         .map(|(row, lengths)| {
