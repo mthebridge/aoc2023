@@ -1,5 +1,7 @@
 // Template.
-// A nice day where my part1 extended anturally to part 2.
+// A nice day where my part1 extended naturally to part 2 - it felt easier to keep
+// track of the empty columns and just add them to the distances as needed than to
+// try and redraw the grid.
 
 // Determine the distance between two galaxies, given the set of empty rows and columns
 // and the expansion multiplier
@@ -54,9 +56,10 @@ pub fn run(input_path: String) {
         }
     }
 
-    // Convert the empty rows and columns to
+    // Convert the empty rows and columns to a list of numbers.
     let empty_col_range: Vec<usize> = (0..max_cols).filter(|&i| empty_cols[i]).collect();
     let empty_row_range: Vec<usize> = (0..max_rows).filter(|&i| empty_rows[i]).collect();
+
     let mut part1 = 0;
     let mut part2 = 0;
     while let Some(this_galaxy) = galaxies.pop() {
