@@ -3,12 +3,14 @@
 
 use std::collections::HashMap;
 
-type Cache<'a> = HashMap<(&'a [char], &'a [u8]), usize>;
+type Cache = HashMap<(Vec<char>, Vec<u8>), usize>;
 
 // Work out how many possible runs we could have givemn this input.
-fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize {
+fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize
+{
 
-    if let Some(res) = cache.get(&(row, lengths)) {
+    let (row_vec, length_vec) =  (row.to_vec(), lengths.to_vec())
+;    if let Some(res) = cache.get(&(row_vec, length_vec)) {
         return *res
     }
     // Check we have space for all the remaining runs.  Need all their sizes,
@@ -49,8 +51,9 @@ fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize
                 possibles += calculate_possibles(&row[new_run_start..], &lengths[1..], cache)
             }
         }
-    }
-    cache.insert((row, lengths), possibles);
+    };
+
+    cache.insert((row.to_vec(), lengths.to_vec()), possibles);
     possibles
 }
 
@@ -69,20 +72,17 @@ pub fn run(input_path: String) {
 
     let mut cache: Cache = HashMap::new();
 
-    let part1 = records.clone()
-        .map(|(row, lengths)| {
-            let res = calculate_possibles(&row, &lengths);
-            // println!("{} {:?}: {}", row.iter().collect::<String>(), &lengths, res);
-            res
-        })
-        .sum::<usize>();
+    let mut part1 = 0;
+    for (row, lengths) in records.clone() {
+        part1 +=  calculate_possibles(&row, &lengths, &mut cache);
+        // println!("{} {:?}: {}", row.iter().collect::<String>(), &lengths, res);
+    };
 
 
     println!("Part 1: {}", part1);
 
-    let part2 = records
-    .enumerate()
-    .map(|(i, (row, lengths))| {
+    let mut part2 = 0;
+    for (row, lengths) in records {
         let mut full_row = row.clone();
         let mut full_lengths = lengths.clone();
         // Add 4 copies.
@@ -91,10 +91,10 @@ pub fn run(input_path: String) {
             full_row.append(&mut row.clone());
             full_lengths.append(&mut lengths.clone());
         }
-        let res = calculate_possibles(&full_row, &full_lengths);
-        println!("Entry {i} has {res} options");
-        res
-    })
-    .sum::<usize>();
+        let res = calculate_possibles(&full_row, &full_lengths, &mut cache);
+        // println!("Entry {i} has {res} options");
+        part2 += res;
+    }
+
     println!("Part 2: {}", part2);
 }
