@@ -8,16 +8,24 @@
 
 use std::collections::HashMap;
 
-// Cache results for performance!
-type Cache = HashMap<(Vec<char>, Vec<u8>), usize>;
+// Cache results for performance.
+// Hit and miss counts are just for interest/debugging.
+#[derive(Debug, Clone, Default)]
+struct Cache {
+    cache: HashMap<(Vec<char>, Vec<u8>), usize>,
+    hits: u64,
+    misses: u64,
+}
 
 // Work out how many possible runs we could have given this input.
 // We look at the next spring, and consider all possible positions that could start given the
 // other constraints; then recurse from the point after that with the remaining springs.
 // The cache is essential for part 2 to complete in reasonable time, as we can end up
-// with billions of possibilities.
+// with billions of possibilities - but many of the later possibilities repeat themselves
+// across rows.
 fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize {
-    if let Some(res) = cache.get(&(row.to_vec(), lengths.to_vec())) {
+    if let Some(res) = cache.cache.get(&(row.to_vec(), lengths.to_vec())) {
+        cache.hits += 1;
         return *res;
     }
     // Check we have space for all the remaining runs.  Need all their sizes,
@@ -61,7 +69,10 @@ fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize
         }
     }
 
-    cache.insert((row.to_vec(), lengths.to_vec()), possibles);
+    cache
+        .cache
+        .insert((row.to_vec(), lengths.to_vec()), possibles);
+    cache.misses += 1;
     possibles
 }
 
@@ -79,7 +90,7 @@ pub fn run(input_path: String) {
         )
     });
 
-    let mut cache: Cache = HashMap::new();
+    let mut cache: Cache = Default::default();
     let mut part1 = 0;
 
     for (row, lengths) in records.clone() {
@@ -87,7 +98,7 @@ pub fn run(input_path: String) {
     }
 
     println!("Part 1: {}", part1);
-
+    println!("  Cache: {} hits {} misses", cache.hits, cache.misses);
     let mut part2 = 0;
     for (row, lengths) in records {
         let mut full_row = row.clone();
@@ -102,4 +113,5 @@ pub fn run(input_path: String) {
     }
 
     println!("Part 2: {}", part2);
+    println!("  Cache: {} hits {} misses", cache.hits, cache.misses);
 }
