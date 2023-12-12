@@ -17,8 +17,7 @@ type Cache = HashMap<(Vec<char>, Vec<u8>), usize>;
 // The cache is essential for part 2 to complete in reasonable time, as we can end up
 // with billions of possibilities.
 fn calculate_possibles(row: &[char], lengths: &[u8], cache: &mut Cache) -> usize {
-    let (row_vec, length_vec) = (row.to_vec(), lengths.to_vec());
-    if let Some(res) = cache.get(&(row_vec, length_vec)) {
+    if let Some(res) = cache.get(&(row.to_vec(), lengths.to_vec())) {
         return *res;
     }
     // Check we have space for all the remaining runs.  Need all their sizes,
