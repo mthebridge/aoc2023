@@ -54,7 +54,6 @@ fn tilt_line(line: &mut [char], rev: bool) {
     // - plus one for each rock between the fixed and the last
     let mut last_fixed = 0;
     let mut rocks_this_stretch = 0;
-    // Annoyingly have to collect here to keep the types the same in both branches.
     if rev {
         line.reverse()
     }
@@ -79,6 +78,7 @@ fn tilt_line(line: &mut [char], rev: bool) {
         }
     }
 
+    // Undo reversal!
     if rev {
         line.reverse();
     }
@@ -119,15 +119,16 @@ pub fn run(input_path: String) {
             }
         }
     }
-    tilt_grid(&mut columns, Direction::N);
-    let part1 = calculate_load(&columns);
+    let mut grid = columns.clone();
+    tilt_grid(&mut grid, Direction::N);
+    let part1 = calculate_load(&grid);
     println!("Part 1: {}", part1);
 
-    let mut new_grid = columns;
+    grid = columns;
     let mut cache = HashMap::new();
     let mut target = None;
     for i in 0.. {
-        if let Some(last) = cache.get(&new_grid.clone()) {
+        if let Some(last) = cache.get(&grid.clone()) {
             // Hit the cache.  No point keeping going, we'll just cycle again.
             // Work out how many more steps we need to reach the expected end point.
             let real_target = target.get_or_insert_with(|| {
@@ -142,16 +143,16 @@ pub fn run(input_path: String) {
             if *real_target == i {
                 break;
             }
+        } else {
+            cache.insert(grid.clone(), i);
         }
 
-        cache.insert(new_grid.clone(), i);
-
         // Tilt the grid
-        tilt_grid(&mut new_grid, Direction::N);
-        tilt_grid(&mut new_grid, Direction::W);
-        tilt_grid(&mut new_grid, Direction::S);
-        tilt_grid(&mut new_grid, Direction::E);
+        tilt_grid(&mut grid, Direction::N);
+        tilt_grid(&mut grid, Direction::W);
+        tilt_grid(&mut grid, Direction::S);
+        tilt_grid(&mut grid, Direction::E);
     }
-    let part2 = calculate_load(&new_grid);
+    let part2 = calculate_load(&grid);
     println!("Part 2: {}", part2);
 }
