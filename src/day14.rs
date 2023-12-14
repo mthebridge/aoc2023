@@ -1,5 +1,6 @@
-// Template.
-// Copy to daynum.rs, and uncomment relevant lins in main to add
+// Got there in the end.
+// Assumes that the cycle eventually stabilises, which it does.
+// Lots of probably unnecessary reallocating into vectors.
 
 use std::collections::HashMap;
 
@@ -30,6 +31,7 @@ fn tilt_grid(grid: Vec<Vec<char>>, dir: Direction) -> Vec<Vec<char>> {
     }
 }
 
+#[allow(dead_code)]
 fn print_grid(grid: &[Vec<char>]) {
     for y in 0..grid[0].len() {
         for x in 0..grid.len() {
@@ -56,7 +58,6 @@ fn tilt_line(line: &[char], rev: bool) -> Vec<char> {
         match c {
             'O' => {
                 let new_pos = last_fixed + rocks_this_stretch;
-                // println!("Rock at {i} now at {new_pos}");
                 if new_pos != i {
                     new_line[new_pos] = c;
                     new_line[i] = '.';
@@ -116,26 +117,23 @@ pub fn run(input_path: String) {
 
     let mut new_grid = columns;
     let mut cache = HashMap::new();
-    let mut load = 0;
     let mut target = None;
     for i in 0.. {
         if let Some(last) = cache.get(&new_grid.clone()) {
             // Hit the cache.  No point keeping going, we'll just cycle again.
             // Work out how many more steps we need to reach the expected end point.
-            // That is - work out the cycle period and add to the current step count
-            let real_target = target.get_or_insert_with(||{
+            let real_target = target.get_or_insert_with(|| {
                 let cycle = i - last;
-                let offset = 1_000_000_000 % cycle;
-                // Need the offset after our last multiple of cycle
-                i + cycle - offset
+                // We need to find the correct offest that will match the billionth step.
+                // To get that:
+                //  - Work out what 1 billion would be mod cycle
+                // - Subtract the offset of the last.
+                let offset = (1_000_000_000 - last) % cycle;
+                i + cycle + offset
             });
-            println!("Cache hit from {last} on {i}, target {real_target}");
-            print_grid(&new_grid);
             if *real_target == i {
-                load = calculate_load(&new_grid);
                 break;
             }
-            continue
         }
 
         cache.insert(new_grid.clone(), i);
@@ -146,6 +144,6 @@ pub fn run(input_path: String) {
         new_grid = tilt_grid(new_grid, Direction::S);
         new_grid = tilt_grid(new_grid, Direction::E);
     }
-    let part2 = load;
+    let part2 = calculate_load(&new_grid);
     println!("Part 2: {}", part2);
 }
