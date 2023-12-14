@@ -1,16 +1,58 @@
 // Template.
 // Copy to daynum.rs, and uncomment relevant lins in main to add
 
-fn tilt_line(line: &[char]) -> Vec<char> {
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Direction {
+    N,
+    S,
+    E,
+    W,
+}
+
+fn tilt_grid(grid: Vec<Vec<char>>, dir: Direction) -> Vec<Vec<char>> {
+    match dir {
+        Direction::N => grid.iter().map(|col| tilt_line(col, false)).collect(),
+        Direction::E => transpose(
+            transpose(grid)
+                .iter()
+                .map(|row| tilt_line(row, true))
+                .collect(),
+        ),
+        Direction::S => grid.iter().map(|col| tilt_line(col, true)).collect(),
+        Direction::W => transpose(
+            transpose(grid)
+                .iter()
+                .map(|row| tilt_line(row, false))
+                .collect(),
+        ),
+    }
+}
+
+fn print_grid(grid: &[Vec<char>]) {
+    for y in 0..grid[0].len() {
+        for x in 0..grid.len() {
+            print!("{}", grid[x][y]);
+        }
+        println!("");
+    }
+}
+
+fn tilt_line(line: &[char], rev: bool) -> Vec<char> {
     // Iterate down the line.  For each rock `O`, we want to work out where it
-    // would end up rolled north, which is:
+    // would end up rolled towards the end, which is:
     // - space after the last fixed rock (#)
     // - plus one for each rock between the fixed and the last
-    // - sum them as we go
     let mut last_fixed = 0;
     let mut rocks_this_stretch = 0;
-    let mut new_line = line.to_vec();
-    for (i, &c) in line.iter().enumerate() {
+    let line: Vec<_> = if rev {
+        line.iter().rev().enumerate().collect()
+    } else {
+        line.iter().enumerate().collect()
+    };
+    let mut new_line: Vec<_> = line.iter().map(|x| *x.1).collect();
+    for (i, &c) in line {
         match c {
             'O' => {
                 let new_pos = last_fixed + rocks_this_stretch;
@@ -30,30 +72,27 @@ fn tilt_line(line: &[char]) -> Vec<char> {
         }
     }
 
+    if rev {
+        new_line.reverse();
+    }
     new_line
 }
 
-fn calculate_load(line: &[char]) -> usize {
-    let length = line.len();
-    line.iter()
-        .enumerate()
-        .map(|(i, &c)| if c == 'O' { length - i } else { 0 })
-        .sum()
+fn calculate_load(grid: &[Vec<char>]) -> usize {
+    grid.iter()
+        .map(|col| {
+            let length = col.len();
+            col.iter()
+                .enumerate()
+                .map(|(i, &c)| if c == 'O' { length - i } else { 0 })
+                .sum::<usize>()
+        })
+        .sum::<usize>()
 }
 
-fn transpose<T: Copy>(grid: Vec<Vec<T>>, rev: bool) -> Vec<Vec<T>> {
+fn transpose<T: Copy>(grid: Vec<Vec<T>>) -> Vec<Vec<T>> {
     (0..grid[0].len())
-    .map(|i| {
-            if rev {
-            (0..grid.len()).rev()
-                .map(|j| grid[j][i])
-                .collect::<Vec<_>>()
-            } else {
-                (0..grid.len())
-                .map(|j| grid[j][i])
-                .collect::<Vec<_>>()
-            }
-        })
+        .map(|i| (0..grid.len()).map(|j| grid[j][i]).collect::<Vec<_>>())
         .collect::<Vec<_>>()
 }
 
@@ -71,54 +110,42 @@ pub fn run(input_path: String) {
             }
         }
     }
-
-    let part1 = columns
-        .iter()
-        .map(|col| {
-            let new_col = tilt_line(col);
-            calculate_load(&new_col)
-        })
-        .sum::<usize>();
+    let part1_grid = tilt_grid(columns.clone(), Direction::N);
+    let part1 = calculate_load(&part1_grid);
     println!("Part 1: {}", part1);
 
     let mut new_grid = columns;
-    for i in 0..1_000_000_000 {
-        if i % 1000000 == 0 {
-            println!("Loop {i}");
+    let mut cache = HashMap::new();
+    let mut load = 0;
+    let mut target = None;
+    for i in 0.. {
+        if let Some(last) = cache.get(&new_grid.clone()) {
+            // Hit the cache.  No point keeping going, we'll just cycle again.
+            // Work out how many more steps we need to reach the expected end point.
+            // That is - work out the cycle period and add to the current step count
+            let real_target = target.get_or_insert_with(||{
+                let cycle = i - last;
+                let offset = 1_000_000_000 % cycle;
+                // Need the offset after our last multiple of cycle
+                i + cycle - offset
+            });
+            println!("Cache hit from {last} on {i}, target {real_target}");
+            print_grid(&new_grid);
+            if *real_target == i {
+                load = calculate_load(&new_grid);
+                break;
+            }
+            continue
         }
-        // Tilt N
-        new_grid = new_grid.iter().map(|col| tilt_line(col)).collect();
-        // Tilt E
-        new_grid = transpose(new_grid, false)
-            .iter()
-            .map(|row| tilt_line(row))
-            .collect();
-        // Tilt S.  Transpose columns
-        new_grid = transpose(new_grid, true)
-            .iter_mut()
-            .map(|col| {
-                col.reverse();
-                let mut new = tilt_line(col);
-                new.reverse();
-                new
-            })
-            .collect();
-        // Tilt W. Then transpose columns.
-        new_grid = transpose(new_grid, false)
-            .iter_mut()
-            .map(|col| {
-                col.reverse();
-                let mut new = tilt_line(col);
-                new.reverse();
-                new
-            })
-            .collect();
-        new_grid = transpose(new_grid, true);
-    }
 
-    let part2 = new_grid
-        .iter()
-        .map(|col| calculate_load(col))
-        .sum::<usize>();
+        cache.insert(new_grid.clone(), i);
+
+        // Tilt the grid
+        new_grid = tilt_grid(new_grid, Direction::N);
+        new_grid = tilt_grid(new_grid, Direction::W);
+        new_grid = tilt_grid(new_grid, Direction::S);
+        new_grid = tilt_grid(new_grid, Direction::E);
+    }
+    let part2 = load;
     println!("Part 2: {}", part2);
 }
