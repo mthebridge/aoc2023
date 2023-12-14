@@ -1,7 +1,10 @@
 // Got there in the end.
-// Assumes that the cycle eventually stabilises, which it does.
+// Brute force too slow, but as per yesterday go for cacheing and then
+// assume that the cycle eventually stabilises, which it does.
 // Lots of probably unnecessary reallocating into vectors.
-
+//
+// Lots of silly mistakes too today: first nto reading the questiona dn going NESW instead of NWSE;
+// then not being able to get the modular arithemtic right to extrapolate forward to a billion rows...
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -12,6 +15,8 @@ enum Direction {
     W,
 }
 
+// Tilt the grid left or right.
+// The grid is columnar, so for the rows, transpose the grid before and after.
 fn tilt_grid(grid: Vec<Vec<char>>, dir: Direction) -> Vec<Vec<char>> {
     match dir {
         Direction::N => grid.iter().map(|col| tilt_line(col, false)).collect(),
@@ -31,6 +36,7 @@ fn tilt_grid(grid: Vec<Vec<char>>, dir: Direction) -> Vec<Vec<char>> {
     }
 }
 
+// Helper for debugging, not used in solution.
 #[allow(dead_code)]
 fn print_grid(grid: &[Vec<char>]) {
     for y in 0..grid[0].len() {
@@ -41,20 +47,22 @@ fn print_grid(grid: &[Vec<char>]) {
     }
 }
 
+//Move the rocks ona  single line tilted towards either end.
 fn tilt_line(line: &[char], rev: bool) -> Vec<char> {
     // Iterate down the line.  For each rock `O`, we want to work out where it
     // would end up rolled towards the end, which is:
-    // - space after the last fixed rock (#)
+    // - the first space after the last fixed rock (#)
     // - plus one for each rock between the fixed and the last
     let mut last_fixed = 0;
     let mut rocks_this_stretch = 0;
+    // Annoyingly have to colelct here to keep the types the same in both branches.
     let line: Vec<_> = if rev {
-        line.iter().rev().enumerate().collect()
+        line.iter().cloned().rev().collect()
     } else {
-        line.iter().enumerate().collect()
+        line.to_vec()
     };
-    let mut new_line: Vec<_> = line.iter().map(|x| *x.1).collect();
-    for (i, &c) in line {
+    let mut new_line: Vec<_> = line.clone();
+    for (i, c) in line.iter().enumerate() {
         match c {
             'O' => {
                 let new_pos = last_fixed + rocks_this_stretch;
@@ -79,18 +87,21 @@ fn tilt_line(line: &[char], rev: bool) -> Vec<char> {
     new_line
 }
 
+// Calculate the northbound load, column by column
 fn calculate_load(grid: &[Vec<char>]) -> usize {
     grid.iter()
         .map(|col| {
             let length = col.len();
             col.iter()
                 .enumerate()
+                // Only O rocks count to load, and contribute the reverse position in the column.
                 .map(|(i, &c)| if c == 'O' { length - i } else { 0 })
                 .sum::<usize>()
         })
         .sum::<usize>()
 }
 
+// helper to siwtch array of columns to array of rows, and vice versa.
 fn transpose<T: Copy>(grid: Vec<Vec<T>>) -> Vec<Vec<T>> {
     (0..grid[0].len())
         .map(|i| (0..grid.len()).map(|j| grid[j][i]).collect::<Vec<_>>())
