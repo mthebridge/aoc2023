@@ -126,7 +126,7 @@ fn get_next_cells(
     }
 }
 
-// Fire the beam into the gris and follow the path.
+// Fire the beam into the grid and follow the path.
 // Keep track of visited cells and crucially also the direction - if we hit a path we've previously
 // traversed then we don't need to keep going as it's already counted.
 fn get_energize_count(grid: &Grid, start_dir: Direction, start_pos: (usize, usize)) -> usize {
