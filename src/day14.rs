@@ -36,15 +36,14 @@ fn tilt_grid(grid: &mut Vec<Vec<char>>, dir: Direction) {
 }
 
 // Helper for debugging, not used in solution.
-#[allow(dead_code)]
-fn print_grid(grid: &[Vec<char>]) {
-    for y in 0..grid[0].len() {
-        for x in 0..grid.len() {
-            print!("{}", grid[x][y]);
-        }
-        println!();
-    }
-}
+// fn print_grid(grid: &[Vec<char>]) {
+//     for y in 0..grid[0].len() {
+//         for x in 0..grid.len() {
+//             print!("{}", grid[x][y]);
+//         }
+//         println!();
+//     }
+// }
 
 //Move the rocks ona  single line tilted towards either end.
 fn tilt_line(line: &mut [char], rev: bool) {

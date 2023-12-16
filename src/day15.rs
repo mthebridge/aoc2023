@@ -32,7 +32,7 @@ pub fn run(input_path: String) {
             // Insert lens into box.
             let (label, length) = instr.split_once('=').unwrap();
             let focal_length = length.parse().unwrap();
-            let this_box = &mut boxes[hash_string(&label)];
+            let this_box = &mut boxes[hash_string(label)];
             // If already in the box just change the length.
             if let Some(lens) = this_box.lenses.iter_mut().find(|l| l.label == label) {
                 lens.focal_length = focal_length
@@ -47,7 +47,7 @@ pub fn run(input_path: String) {
             // Remove from box if present.
             debug_assert!(instr.ends_with('-'));
             let label = instr.trim_end_matches('-');
-            let this_box = &mut boxes[hash_string(&label)];
+            let this_box = &mut boxes[hash_string(label)];
             if let Some(lens_idx) = this_box.lenses.iter().position(|l| l.label == label) {
                 this_box.lenses.remove(lens_idx);
             }
