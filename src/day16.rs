@@ -145,7 +145,7 @@ fn get_energize_count(grid: &Grid, start_dir: Direction, start_pos: (usize, usiz
             })
             .collect();
     }
-    // We want to de-deuplciate on direction, so re-combine into a HashSet that drops the direction,
+    // We want to de-deuplicate on direction, so re-combine into a HashSet that drops the direction,
     // and then take its size to get the energized cell count.
     // (We could separately be building up the two hashSets, but perf is good enough).
     visited
@@ -166,23 +166,22 @@ pub fn run(input_path: String) {
     let max_y = grid.len();
 
     // Now try from every side square.
-    // I can't see much clever we can do without brute-force beyond some cacheing of previosuly seen grid
+    // I can't see much clever we can do without brute-force beyond some cacheing of previously seen grid
     // states across runs - but a release build runs in 200ms so I'm not super fussed about optimizing.
-    let part2 =
-        (0..max_y)
-            .map(|y| get_energize_count(&grid, Direction::E, (0, y)))
-            .chain(
-                (0..max_y)
-                    .map(|y| get_energize_count(&grid, Direction::W, (0, max_y - 1 - y)))
-                    .chain(
-                        (0..max_x)
-                            .map(|x| get_energize_count(&grid, Direction::S, (x, 0)))
-                            .chain((0..max_x).map(|x| {
-                                get_energize_count(&grid, Direction::N, (max_x - x - 1, 0))
-                            })),
-                    ),
-            )
-            .max()
-            .unwrap();
+    let part2 = (0..max_y)
+        .flat_map(|y| {
+            [
+                get_energize_count(&grid, Direction::E, (0, y)),
+                get_energize_count(&grid, Direction::W, (0, max_y - 1 - y)),
+            ]
+        })
+        .chain((0..max_x).flat_map(|x| {
+            [
+                get_energize_count(&grid, Direction::S, (x, 0)),
+                get_energize_count(&grid, Direction::N, (max_x - x - 1, 0)),
+            ]
+        }))
+        .max()
+        .unwrap();
     println!("Part 2: {}", part2);
 }
