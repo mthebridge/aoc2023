@@ -1,7 +1,7 @@
 // Part 1 is basically a parsing test.
 // Part 2 more interesting.  Brute force clearly won't work (4000^4 is way too many options).
-// However, we can analyze the rule flows, and work out where the actual important
-// boundaries are.  We can then use that to track the total number of acceptable parts.
+// However, we can analyze the rule flows, and work out where the boundaries are that trigger a change.
+//  We can then use that to track the total number of acceptable parts.
 use std::{
     collections::{HashMap, VecDeque},
     str::FromStr,
@@ -120,7 +120,7 @@ fn count_acceptable_parts(rules: &HashMap<&str, Vec<Rule>>, max_attr: u64) -> u6
             maxvals: Part::with_attr_value(max_attr + 1),
         },
     ));
-    // let mut final_states: Vec<RuleState> = vec![];
+
     let mut count = 0;
 
     while let Some((workflow, idx, state)) = stack.pop_front() {
@@ -208,7 +208,6 @@ fn count_acceptable_parts(rules: &HashMap<&str, Vec<Rule>>, max_attr: u64) -> u6
         }
     }
 
-    // Now merge the ranges and count them.
     count
 }
 
@@ -216,6 +215,8 @@ pub fn run(input_path: String) {
     let input = std::fs::read_to_string(input_path).unwrap();
     let (workflows, parts) = input.split_once("\n\n").unwrap();
 
+    // Parsing.  Could be faster with regex, but always fun to restict yourself to
+    // string methods.  Asumes input well-formed.
     let rules: HashMap<&str, Vec<Rule>> = workflows
         .lines()
         .map(|line| {

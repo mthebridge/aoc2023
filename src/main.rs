@@ -53,7 +53,7 @@ fn main() -> Result<(), String> {
         17 => day17::run(input_path),
         18 => day18::run(input_path),
         19 => day19::run(input_path),
-        20 => day10::run(input_path),
+        20 => day20::run(input_path),
         // 21 => day21::run(input_path),
         // 22 => day22::run(input_path),
         // 23 => day23::run(input_path),
