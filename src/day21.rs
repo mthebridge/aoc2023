@@ -1,6 +1,6 @@
 // More pathfinding.
 
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Space {
@@ -15,42 +15,32 @@ struct Grid {
     start: (i64, i64),
 }
 
-fn max_positions_for_stepcount(grid: &Grid, max_steps: u64) -> u64 {
+fn generate_distances(grid: &Grid) -> HashMap<(i64, i64), u64> {
     let max_y = grid.grid.len();
     let max_x = grid.grid[0].len();
+    assert_eq!(max_x, max_y); // By inspection of input.
 
     // Start at "start"
-    let mut visited = HashSet::new();
-    let mut ans = 0;
+    let mut visited = HashMap::new();
     let mut queue = VecDeque::new();
 
     queue.push_back((0, grid.start));
-    visited.insert(grid.start);
+    visited.insert(grid.start, 0);
     while let Some((steps, (x, y))) = queue.pop_front() {
-        if steps > max_steps {
-            break;
-        }
-        if steps % 2 == 0 {
-            // println!("Can reach ({x}, {y})");
-            ans += 1;
-        }
-
-        if steps % 1000 == 0 {
-            dbg!(steps);
-            dbg!(queue.len());
-        }
         // Add neighbours
         let neighs = [((x - 1, y)), ((x, y - 1)), ((x + 1, y)), ((x, y + 1))];
         for (nx, ny) in neighs {
-            if !visited.contains(&(nx, ny))
-                && grid.grid[(ny as usize) % max_y][(nx as usize) % max_x] == Space::Open
+            let nx = (nx as usize % max_x) as i64;
+            let ny = (ny as usize % max_y) as i64;
+            if !visited.contains_key(&(nx, ny))
+                && grid.grid[ny as usize][nx as usize] == Space::Open
             {
-                visited.insert((nx, ny));
+                visited.insert((nx, ny), steps + 1);
                 queue.push_back((steps + 1, (nx, ny)));
             }
         }
     }
-    ans
+    visited
 }
 
 pub fn run(input_path: String) {
@@ -80,10 +70,28 @@ pub fn run(input_path: String) {
         start: start.unwrap(),
     };
 
-    let part1 = max_positions_for_stepcount(&grid, 64);
+    // Observe that:
+    // - if we can get to a position in N steps we can get there in every other multiple of 2 below N.
+    // - the provided map has no rocks on the outer boundary.
+    //
+    // So we can start by breadth-first searching every position on the grid and storing its
+    // distance from the start.  If that disatnce is at most 64 and of even parity, we can reach it.
+    let distances = generate_distances(&grid);
+    let part1 = distances
+        .values()
+        .filter(|&&v| v <= 64 && v % 2 == 0)
+        .count();
     println!("Part 1: {}", part1);
 
-    let part2 = max_positions_for_stepcount(&grid, 26501365);
+    // For part2, we can't keep iterating.
+    // Note that because the grid has open edges, if we need to cross more than 1 grid instance, we can always do so
+    // in the Manhattan distance.
+    // So, we can reach:
+    // - Anywhere in the existing grid, multiplied by that is (2N - 1) * N, where N is (max_steps / grid size)
+    // - Then for remaining spaces, we can reach anywhere that is
+    let maxsteps_p2 = 26501365usize;
+    let grid_repeats = maxsteps_p2 / grid.grid.len();
+    let part2 = 0; //max_positions_for_stepcount(&grid, 26501365);
 
     println!("Part 2: {}", part2);
 }
