@@ -89,9 +89,13 @@ pub fn run(input_path: String) {
     // So, we can reach:
     // - Anywhere in the existing grid, multiplied by that is (2N - 1) * N, where N is (max_steps / grid size)
     // - Then for remaining spaces, we can reach anywhere that is
-    let maxsteps_p2 = 26501365usize;
-    let grid_repeats = maxsteps_p2 / grid.grid.len();
-    let part2 = 0; //max_positions_for_stepcount(&grid, 26501365);
+    let maxsteps_p2 = 26501365u64;
+    let grid_repeats = maxsteps_p2 / grid.grid.len() as u64;
+    let grid_max_size = 2 * grid_repeats - 1;
+    let local_reachable = distances.values().filter(|&&v| v <= maxsteps_p2 && v % 2 == 1).count();
+    dbg!(local_reachable, grid_max_size);
+    let part2 = local_reachable as u64 * grid_max_size * grid_max_size; //max_positions_for_stepcount(&grid, 26501365);
+    // Now need to add on all those reachable spots on the most distant grid.
 
     println!("Part 2: {}", part2);
 }
