@@ -102,7 +102,9 @@ fn run_single_loop<'a>(state: &'a mut ModulesState, debug: bool) -> PulseCounts 
             let output = module.recv(pulse, &sender);
             if let Some(new_pulse) = output {
                 for d in module.outputs() {
-                    if debug { println!("Adding output: {target} {:?} -> {d}", new_pulse); }
+                    if debug {
+                        println!("Adding output: {target} {:?} -> {d}", new_pulse);
+                    }
                     queue.push_back((target.clone(), d.to_string(), new_pulse));
                 }
             }
@@ -161,19 +163,22 @@ pub fn run(input_path: String) {
 
     while counters.len() < num_inputs {
         loops += 1;
+        if loops % 1000000 == 0 {
+            dbg!(loops);
+        }
         let _ = run_single_loop(&mut modules, false);
         if let Some(Module::Conjunction(in_state, _)) = modules.get(rx_input) {
+            if loops % 1000000 == 0 {
+                dbg!(&in_state);
+            }
             for (name, last_input) in in_state {
-                if counters.get(name).is_none() {
-                    // This module sends to the aggregator that sends to rx.
-                    //   name -> rx_input -> rx
-                    // To trigger low to rx, we need to send High from all  modules to rx_input.
-                    if last_input == &Pulse::High {
-                        println!("{loops}: High pulse received from {name}");
-                        counters.insert(name.to_string(), loops);
-                    } else {
-                        // println!("All high inputs for {input}");
-                    }
+                // This module sends to the aggregator that sends to rx.
+                //   name -> rx_input -> rx
+                // To trigger low to rx, we need to send High from all  modules to rx_input.
+                if last_input == &Pulse::High {
+                    println!("{loops}: High pulse received from {name}");
+                    let this_count = counters.entry(name.to_string()).or_insert(0);
+                    *this_count = loops - *this_count;
                 }
             }
         }
