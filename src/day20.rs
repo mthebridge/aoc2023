@@ -68,6 +68,7 @@ impl Module {
         }
     }
 
+    #[allow(dead_code)]
     fn is_reset(&self) -> bool {
         match self {
             Module::Broadcast(_) => true,
@@ -85,11 +86,11 @@ struct PulseCounts {
 }
 
 // Simulate a button press, and return the number of
-fn run_single_loop<'a>(state: &'a mut ModulesState) -> (PulseCounts, bool) {
+fn run_single_loop<'a>(state: &'a mut ModulesState, debug: bool) -> PulseCounts {
     let mut low = 0;
     let mut high = 0;
-    let mut rx_trigger = false;
     let mut queue = VecDeque::new();
+
     queue.push_back(("".to_string(), "broadcaster".to_string(), Pulse::Low));
     while let Some((sender, target, pulse)) = queue.pop_front() {
         if pulse == Pulse::High {
@@ -101,16 +102,14 @@ fn run_single_loop<'a>(state: &'a mut ModulesState) -> (PulseCounts, bool) {
             let output = module.recv(pulse, &sender);
             if let Some(new_pulse) = output {
                 for d in module.outputs() {
-                    if d == "rx" && new_pulse == Pulse::Low {
-                        rx_trigger = true
-                    }
+                    if debug { println!("Adding output: {target} {:?} -> {d}", new_pulse); }
                     queue.push_back((target.clone(), d.to_string(), new_pulse));
                 }
             }
         }
     }
 
-    (PulseCounts { high, low }, rx_trigger)
+    PulseCounts { high, low }
 }
 
 pub fn run(input_path: String) {
@@ -128,7 +127,7 @@ pub fn run(input_path: String) {
         .collect::<HashMap<_, _>>();
 
     // Initialize all the conjunction modules.
-    for (dest, inputs) in input_map {
+    for (dest, inputs) in &input_map {
         if let Some(module) = modules.get_mut(dest.as_str()) {
             if let Module::Conjunction(state, _) = module {
                 for i in inputs {
@@ -143,22 +142,44 @@ pub fn run(input_path: String) {
     let mut answer = PulseCounts { high: 0, low: 0 };
 
     while loops < 1000 {
-        let (new, _) = run_single_loop(&mut modules);
+        let new = run_single_loop(&mut modules, false);
         answer.high += new.high;
         answer.low += new.low;
         loops += 1;
     }
 
     println!("Part 1: {}", answer.high * answer.low);
+    modules = start_state;
 
-    for i in 1000.. {
-        let (_, rx_trigger) = run_single_loop(&mut modules);
-        if i % 10000 == 0{
-            dbg!(i);
-        }
-        if rx_trigger {
-            println!("Part 2: {}", i);
-            break;
+    let rx_inputs = input_map.get("rx").unwrap();
+    assert_eq!(rx_inputs.len(), 1);
+    let rx_input = rx_inputs[0];
+    let num_inputs = input_map.get(rx_input).unwrap().len();
+
+    let mut counters = HashMap::with_capacity(num_inputs);
+    let mut loops = 0;
+
+    while counters.len() < num_inputs {
+        loops += 1;
+        let _ = run_single_loop(&mut modules, false);
+        if let Some(Module::Conjunction(in_state, _)) = modules.get(rx_input) {
+            for (name, last_input) in in_state {
+                if counters.get(name).is_none() {
+                    // This module sends to the aggregator that sends to rx.
+                    //   name -> rx_input -> rx
+                    // To trigger low to rx, we need to send High from all  modules to rx_input.
+                    if last_input == &Pulse::High {
+                        println!("{loops}: High pulse received from {name}");
+                        counters.insert(name.to_string(), loops);
+                    } else {
+                        // println!("All high inputs for {input}");
+                    }
+                }
+            }
         }
     }
+    let part2 = counters
+        .values()
+        .fold(1, |acc, val| num::integer::lcm(acc, *val));
+    println!("Part 2: {}", part2);
 }
