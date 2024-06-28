@@ -42,7 +42,9 @@ fn max_positions_for_stepcount(grid: &Grid, max_steps: u64) -> u64 {
         // Add neighbours
         let neighs = [((x - 1, y)), ((x, y - 1)), ((x + 1, y)), ((x, y + 1))];
         for (nx, ny) in neighs {
-            if !visited.contains(&(nx, ny)) && grid.grid[(ny as usize) % max_y][(nx as usize) % max_x] == Space::Open {
+            if !visited.contains(&(nx, ny))
+                && grid.grid[(ny as usize) % max_y][(nx as usize) % max_x] == Space::Open
+            {
                 visited.insert((nx, ny));
                 queue.push_back((steps + 1, (nx, ny)));
             }

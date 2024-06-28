@@ -1,5 +1,6 @@
-// Template.
-// Copy to daynum.rs, and uncomment relevant lins in main to add
+// Part 1 is a "can you implement the given logic and run it while tracking some counters".
+// Part 2 requires using the same trick as day 8, and relies on assuming we have nicely
+// lined-up cycles so we can just do an LCM on the High inputs for the final conjucntion module.
 
 use std::collections::{HashMap, VecDeque};
 
@@ -67,16 +68,8 @@ impl Module {
             }
         }
     }
-
-    #[allow(dead_code)]
-    fn is_reset(&self) -> bool {
-        match self {
-            Module::Broadcast(_) => true,
-            Module::FlipFlop(s, _) => *s,
-            Module::Conjunction(s, _) => s.values().all(|&v| v == Pulse::Low),
-        }
-    }
 }
+
 type ModulesState<'a> = HashMap<&'a str, Module>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,10 +79,15 @@ struct PulseCounts {
 }
 
 // Simulate a button press, and return the number of
-fn run_single_loop<'a>(state: &'a mut ModulesState, debug: bool) -> PulseCounts {
+fn run_single_loop<'a>(
+    state: &'a mut ModulesState,
+    debug: bool,
+    target_module: &'a str,
+) -> (PulseCounts, Vec<String>) {
     let mut low = 0;
     let mut high = 0;
     let mut queue = VecDeque::new();
+    let mut high_triggers = vec![];
 
     queue.push_back(("".to_string(), "broadcaster".to_string(), Pulse::Low));
     while let Some((sender, target, pulse)) = queue.pop_front() {
@@ -105,13 +103,16 @@ fn run_single_loop<'a>(state: &'a mut ModulesState, debug: bool) -> PulseCounts 
                     if debug {
                         println!("Adding output: {target} {:?} -> {d}", new_pulse);
                     }
+                    if d == target_module && new_pulse == Pulse::High {
+                        high_triggers.push(target.clone());
+                    }
                     queue.push_back((target.clone(), d.to_string(), new_pulse));
                 }
             }
         }
     }
 
-    PulseCounts { high, low }
+    (PulseCounts { high, low }, high_triggers)
 }
 
 pub fn run(input_path: String) {
@@ -139,46 +140,37 @@ pub fn run(input_path: String) {
         }
     }
 
-    let start_state = modules.clone();
+    // let start_state = modules.clone();
     let mut loops = 0;
     let mut answer = PulseCounts { high: 0, low: 0 };
 
     while loops < 1000 {
-        let new = run_single_loop(&mut modules, false);
+        let (new, _) = run_single_loop(&mut modules, false, "");
         answer.high += new.high;
         answer.low += new.low;
         loops += 1;
     }
 
     println!("Part 1: {}", answer.high * answer.low);
-    modules = start_state;
+    // modules = start_state;
 
     let rx_inputs = input_map.get("rx").unwrap();
     assert_eq!(rx_inputs.len(), 1);
     let rx_input = rx_inputs[0];
-    let num_inputs = input_map.get(rx_input).unwrap().len();
+    let target_inputs = input_map.get(rx_input).unwrap();
+    let mut counters = HashMap::with_capacity(target_inputs.len());
 
-    let mut counters = HashMap::with_capacity(num_inputs);
-    let mut loops = 0;
-
-    while counters.len() < num_inputs {
+    while counters.len() < target_inputs.len() {
         loops += 1;
-        if loops % 1000000 == 0 {
-            dbg!(loops);
-        }
-        let _ = run_single_loop(&mut modules, false);
-        if let Some(Module::Conjunction(in_state, _)) = modules.get(rx_input) {
-            if loops % 1000000 == 0 {
-                dbg!(&in_state);
-            }
-            for (name, last_input) in in_state {
-                // This module sends to the aggregator that sends to rx.
-                //   name -> rx_input -> rx
-                // To trigger low to rx, we need to send High from all  modules to rx_input.
-                if last_input == &Pulse::High {
-                    println!("{loops}: High pulse received from {name}");
-                    let this_count = counters.entry(name.to_string()).or_insert(0);
-                    *this_count = loops - *this_count;
+        let (_, high_triggers) = run_single_loop(&mut modules, false, &rx_input);
+        for &name in target_inputs {
+            // This module sends to the aggregator that sends to rx.
+            //   name -> rx_input -> rx
+            // To trigger low to rx, we need to send High from all modules to rx_input.
+            for t in &high_triggers {
+                if t == name {
+                    let this_count = counters.entry(name.to_string()).or_insert(0u64);
+                    *this_count = loops;
                 }
             }
         }

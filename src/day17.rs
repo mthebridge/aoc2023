@@ -162,7 +162,6 @@ pub fn run(input_path: String) {
     // Run shortest path from (0, 0) to (max_x, max_y).
     // Classic Dijkstra, with the caveat that you can't go more than 3 steps in the same direction.
     // So need to store the recent direction + num steps in that direction.
-
     let part1 = solve(&grid, false);
     println!("Part 1: {}", part1);
 
