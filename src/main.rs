@@ -19,10 +19,10 @@ mod day18;
 mod day19;
 mod day20;
 mod day21;
-// mod day22;
-// mod day23;
-// mod day24;
-// mod day25;
+mod day22;
+mod day23;
+mod day24;
+mod day25;
 
 fn main() -> Result<(), String> {
     let day_num: u16 = std::env::args()
@@ -55,10 +55,10 @@ fn main() -> Result<(), String> {
         19 => day19::run(input_path),
         20 => day20::run(input_path),
         21 => day21::run(input_path),
-        // 22 => day22::run(input_path),
-        // 23 => day23::run(input_path),
-        // 24 => day24::run(input_path),
-        // 25 => day25::run(input_path),
+        22 => day22::run(input_path),
+        23 => day23::run(input_path),
+        24 => day24::run(input_path),
+        25 => day25::run(input_path),
         _ => panic!("Day not implemented"),
     }
 
